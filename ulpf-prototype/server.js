@@ -1,12 +1,17 @@
-const express = require('express');
+const express = require("express");
+const cors = require("cors");
+
+const logsRouter = require("./routes/logs");
 
 const app = express();
-
 const PORT = 3000;
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-});
+
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use("/api/logs", logsRouter);
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`ULPF Prototype running on http://localhost:${PORT}`);
 });
