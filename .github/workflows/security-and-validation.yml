@@ -1,0 +1,79 @@
+name: Security & Config Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  gitleaks:
+    name: Secret & Credential Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  config-validation:
+    name: YAML & JSON Syntax Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Validate All YAML and JSON Files
+        run: |
+          node -e "
+          import fs from 'fs';
+          import path from 'path';
+          import YAML from 'yaml';
+
+          function checkDir(dir) {
+            if (!fs.existsSync(dir)) return;
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry.name);
+              if (entry.isDirectory() && entry.name !== 'node_modules' && entry.name !== '.git') {
+                checkDir(fullPath);
+              } else if (entry.isFile()) {
+                if (entry.name.endsWith('.json')) {
+                  try {
+                    JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+                    console.log('✔ Valid JSON:', fullPath);
+                  } catch (err) {
+                    console.error('✖ Invalid JSON in', fullPath, ':', err.message);
+                    process.exit(1);
+                  }
+                } else if (entry.name.endsWith('.yaml') || entry.name.endsWith('.yml')) {
+                  try {
+                    YAML.parse(fs.readFileSync(fullPath, 'utf8'));
+                    console.log('✔ Valid YAML:', fullPath);
+                  } catch (err) {
+                    console.error('✖ Invalid YAML in', fullPath, ':', err.message);
+                    process.exit(1);
+                  }
+                }
+              }
+            }
+          }
+
+          console.log('Validating repository JSON & YAML configuration files...');
+          ['config', 'parsers', 'test-logs', '.github'].forEach(checkDir);
+          console.log('All configuration files are syntactically valid!');
+          "
