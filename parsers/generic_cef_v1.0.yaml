@@ -1,0 +1,65 @@
+parser_id: generic_cef_v1.0
+version: "1.0"
+device_family: Generic CEF
+description: "Generic Common Event Format log parser"
+
+detection:
+  signatures:
+    - "CEF:"
+  structure: "cef"
+  keywords:
+    - "src="
+    - "dst="
+    - "act="
+
+extraction_rules:
+  - field: "cef_version"
+    regex: "^(?:[\\w\\s:]+)?CEF:(\\d+)"
+  - field: "vendor"
+    regex: "^(?:[\\w\\s:]+)?CEF:\\d+\\|([^|]*)"
+  - field: "product"
+    regex: "^(?:[\\w\\s:]+)?CEF:\\d+\\|[^|]*\\|([^|]*)"
+  - field: "product_version"
+    regex: "^(?:[\\w\\s:]+)?CEF:\\d+\\|[^|]*\\|[^|]*\\|([^|]*)"
+  - field: "device_event_class_id"
+    regex: "^(?:[\\w\\s:]+)?CEF:\\d+\\|[^|]*\\|[^|]*\\|[^|]*\\|([^|]*)"
+  - field: "name"
+    regex: "^(?:[\\w\\s:]+)?CEF:\\d+\\|[^|]*\\|[^|]*\\|[^|]*\\|[^|]*\\|([^|]*)"
+  - field: "severity"
+    regex: "^(?:[\\w\\s:]+)?CEF:\\d+\\|[^|]*\\|[^|]*\\|[^|]*\\|[^|]*\\|[^|]*\\|([^|]*)"
+  - field: "src"
+    regex: "\\bsrc=([^\\s]+)"
+  - field: "dst"
+    regex: "\\bdst=([^\\s]+)"
+  - field: "spt"
+    regex: "\\bspt=(\\d+)"
+  - field: "dpt"
+    regex: "\\bdpt=(\\d+)"
+  - field: "act"
+    regex: "\\bact=([^\\s]+)"
+  - field: "proto"
+    regex: "\\bproto=([^\\s]+)"
+  - field: "msg"
+    regex: "\\bmsg=(.*?)(?:\\s+[\\w.-]+=|$|\\n)"
+  - field: "app"
+    regex: "\\bapp=([^\\s]+)"
+  - field: "cs1"
+    regex: "\\bcs1=([^\\s]+)"
+
+required_fields:
+  - "vendor"
+  - "product"
+  - "name"
+  - "severity"
+
+normalization_mapping:
+  src: "src_endpoint.ip"
+  dst: "dst_endpoint.ip"
+  spt: "src_endpoint.port"
+  dpt: "dst_endpoint.port"
+  act: "action"
+  proto: "protocol"
+  name: "event_type"
+  severity: "severity"
+  vendor: "extensions.vendor_name"
+  product: "extensions.product_name"
