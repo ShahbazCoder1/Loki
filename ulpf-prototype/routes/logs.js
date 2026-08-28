@@ -1,5 +1,5 @@
-const express = require("express");
-const { receive } = require("../modules/receiver");
+import express from "express";
+import { receive } from "../modules/receiver.js";
 
 const router = express.Router();
 
@@ -27,4 +27,4 @@ router.post("/", (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

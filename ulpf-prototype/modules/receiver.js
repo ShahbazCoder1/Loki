@@ -1,13 +1,17 @@
-const { v4: uuidv4 } = require("uuid");
-const CryptoJS = require("crypto-js");
-const fs = require("fs");
-const path = require("path");
+import { v4 as uuidv4 } from "uuid";
+import CryptoJS from "crypto-js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function sha256(data) {
   return CryptoJS.SHA256(data).toString();
 }
 
-function receive(rawLogString) {
+export function receive(rawLogString) {
   const eventId = uuidv4();
   const hash = sha256(rawLogString);
 
@@ -65,6 +69,4 @@ function receive(rawLogString) {
   return event;
 }
 
-module.exports = {
-  receive
-};
+export default receive;
