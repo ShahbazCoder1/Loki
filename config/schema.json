@@ -1,0 +1,49 @@
+{
+  "required_fields": [
+    "event_class",
+    "timestamp",
+    "action"
+  ],
+  "field_types": {
+    "event_class": "string",
+    "event_type": "string",
+    "timestamp": "iso8601",
+    "src_endpoint.ip": "ipv4",
+    "dst_endpoint.ip": "ipv4",
+    "src_endpoint.port": "integer",
+    "dst_endpoint.port": "integer",
+    "severity": "integer",
+    "severity_label": "string",
+    "action": "string",
+    "disposition": "string",
+    "protocol": "string"
+  },
+  "enum_values": {
+    "action": [
+      "allowed",
+      "denied",
+      "dropped",
+      "closed",
+      "logged",
+      "reset"
+    ],
+    "severity_label": [
+      "informational",
+      "low",
+      "medium",
+      "high",
+      "critical",
+      "debug"
+    ],
+    "event_class": [
+      "network_activity",
+      "security_finding",
+      "system_activity"
+    ],
+    "disposition": [
+      "success",
+      "failure",
+      "unknown"
+    ]
+  }
+}

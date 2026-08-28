@@ -1,0 +1,17 @@
+[
+  "%ASA-6-302013: Built inbound TCP connection 12345 for outside:10.0.0.5/1234 to inside:192.168.1.1/443",
+  "%ASA-6-302014: Teardown inbound TCP connection 12345 for outside:10.0.0.5/1234 to inside:192.168.1.1/443 duration 0:00:30 bytes 4096",
+  "%ASA-4-106023: Deny tcp src outside:10.0.0.100/5555 dst inside:192.168.1.50/22 by access-group \"OUTSIDE_IN\" [0x0, 0x0]",
+  "%ASA-6-302015: Built outbound UDP connection 54321 for inside:192.168.1.20/5353 to outside:8.8.8.8/53",
+  "%ASA-6-302016: Teardown outbound UDP connection 54321 for inside:192.168.1.20/5353 to outside:8.8.8.8/53 duration 0:00:02 bytes 128",
+  "%ASA-6-305011: Built dynamic TCP translation from inside:192.168.1.10/4444 to outside:203.0.113.5/4444",
+  "%ASA-3-710003: TCP access denied by ACL from 198.51.100.25/4567 to outside:192.168.1.1/80",
+  "%ASA-4-106015: Deny TCP (no connection) from 203.0.113.88/443 to inside:10.0.0.15/49152 flags RST on interface outside",
+  "%ASA-6-302020: Built inbound ICMP connection for faddr 10.0.0.88/0 gaddr 192.168.1.1/0 laddr 192.168.1.1/0",
+  "%ASA-6-302021: Teardown ICMP connection for faddr 10.0.0.88/0 gaddr 192.168.1.1/0 laddr 192.168.1.1/0 duration 0:00:10 bytes 64",
+  "%ASA-5-106100: access-list OUTSIDE permitted tcp outside:198.51.100.10/3389 to inside:10.0.0.20/3389 hit-cnt 1 first hit [0x12345678, 0x0]",
+  "%ASA-4-106023: Deny udp src outside:203.0.113.19/123 dst inside:10.0.0.1/123 by access-group \"OUTSIDE_BLOCK\" [0x0, 0x0]",
+  "%ASA-2-106001: Inbound TCP connection denied from 198.51.100.99/50000 to 10.0.0.1/23 flags SYN on interface outside",
+  "%ASA-6-302013: Built outbound TCP connection 98765 for inside:192.168.1.100/51234 to outside:172.217.16.206/443",
+  "%ASA-6-302014: Teardown outbound TCP connection 98765 for inside:192.168.1.100/51234 to outside:172.217.16.206/443 duration 0:02:15 bytes 1048576"
+]
