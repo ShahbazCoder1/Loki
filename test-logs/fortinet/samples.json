@@ -1,0 +1,17 @@
+[
+  "date=2026-08-25 time=10:00:00 devname=FGT60E logid=0000000013 type=traffic subtype=forward action=accept srcip=10.0.0.5 dstip=192.168.1.1 srcport=12345 dstport=443 proto=6",
+  "date=2026-08-25 time=10:01:00 devname=FGT60E logid=0000000013 type=traffic subtype=forward action=deny srcip=10.0.0.100 dstip=192.168.1.50 srcport=5555 dstport=22 proto=6 level=alert msg=\"Traffic denied\"",
+  "date=2026-08-25 time=10:02:15 devname=FGT100D logid=0000000020 type=traffic subtype=local action=accept srcip=192.168.1.25 dstip=192.168.1.254 srcport=58912 dstport=53 proto=17 duration=1 sentbyte=68 rcvdbyte=132",
+  "date=2026-08-25 time=10:03:30 devname=FGT60E logid=0000000013 type=traffic subtype=forward action=close srcip=10.0.0.15 dstip=203.0.113.80 srcport=49200 dstport=80 proto=6 duration=45 sentbyte=1250 rcvdbyte=8900",
+  "date=2026-08-25 time=10:04:10 devname=FGT200E logid=0100020001 type=event subtype=system action=login srcip=192.168.1.99 dstip=192.168.1.254 srcport=50123 dstport=443 proto=6 level=information msg=\"Administrator login successful\"",
+  "date=2026-08-25 time=10:05:00 devname=FGT60E logid=0000000013 type=traffic subtype=forward action=deny srcip=198.51.100.4 dstip=10.0.0.10 srcport=61234 dstport=3389 proto=6 level=warning msg=\"Policy violation\"",
+  "date=2026-08-25 time=10:06:22 devname=FGT100D logid=0000000013 type=traffic subtype=forward action=accept srcip=10.0.0.22 dstip=8.8.4.4 srcport=43210 dstport=53 proto=17 duration=2 sentbyte=74 rcvdbyte=140",
+  "date=2026-08-25 time=10:07:45 devname=FGT60E logid=0000000013 type=traffic subtype=forward action=timeout srcip=10.0.0.88 dstip=198.51.100.77 srcport=51000 dstport=443 proto=6 duration=120 sentbyte=512 rcvdbyte=0",
+  "date=2026-08-25 time=10:08:12 devname=FGT300E logid=0000000013 type=traffic subtype=forward action=accept srcip=10.10.1.5 dstip=172.16.0.10 srcport=34567 dstport=8080 proto=6 duration=15 sentbyte=4096 rcvdbyte=16384",
+  "date=2026-08-25 time=10:09:01 devname=FGT60E logid=0000000013 type=traffic subtype=forward action=deny srcip=203.0.113.120 dstip=10.0.0.5 srcport=44444 dstport=23 proto=6 level=alert msg=\"Telnet access blocked\"",
+  "date=2026-08-25 time=10:10:33 devname=FGT100D logid=0000000013 type=traffic subtype=forward action=accept srcip=192.168.1.150 dstip=142.250.190.46 srcport=56789 dstport=443 proto=6 duration=300 sentbyte=102400 rcvdbyte=2048000",
+  "date=2026-08-25 time=10:11:55 devname=FGT60E logid=0000000013 type=traffic subtype=forward action=client-rst srcip=10.0.0.33 dstip=198.51.100.12 srcport=52345 dstport=80 proto=6 duration=5 sentbyte=320 rcvdbyte=512",
+  "date=2026-08-25 time=10:12:40 devname=FGT200E logid=0000000013 type=traffic subtype=forward action=accept srcip=10.0.0.7 dstip=192.168.1.1 srcport=1024 dstport=161 proto=17 duration=1 sentbyte=90 rcvdbyte=180",
+  "date=2026-08-25 time=10:13:18 devname=FGT60E logid=0000000013 type=traffic subtype=forward action=deny srcip=198.51.100.200 dstip=10.0.0.1 srcport=60000 dstport=445 proto=6 level=critical msg=\"SMB vulnerability exploit attempt blocked\"",
+  "date=2026-08-25 time=10:14:02 devname=FGT100D logid=0000000013 type=traffic subtype=forward action=accept srcip=10.0.0.60 dstip=1.1.1.1 srcport=54321 dstport=53 proto=17 duration=1 sentbyte=65 rcvdbyte=120"
+]

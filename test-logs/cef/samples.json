@@ -1,0 +1,17 @@
+[
+  "CEF:0|Palo Alto|Firewall|10.0|100|Connection Allowed|3|src=10.0.0.5 dst=192.168.1.1 dpt=443 spt=12345 act=allow proto=tcp",
+  "CEF:0|CheckPoint|SmartDefense|5.0|200|Attack Blocked|8|src=10.0.0.100 dst=192.168.1.50 dpt=22 spt=5555 act=block msg=SSH brute force",
+  "CEF:0|Imperva|SecureSphere|14.0|1000|SQL Injection Blocked|9|src=203.0.113.50 dst=10.0.0.10 spt=49152 dpt=80 act=deny proto=tcp msg=SQL syntax error detected",
+  "CEF:0|Trend Micro|Deep Security|20.0|4000000|Integrity Monitoring Rule Triggered|6|src=192.168.1.15 dst=192.168.1.200 act=log msg=File /etc/passwd modified app=OSSEC",
+  "CEF:0|F5|BIG-IP|15.1|ASM:SQLi|SQL Injection Attempt|7|src=198.51.100.44 dst=10.0.0.2 dpt=443 spt=53100 act=drop proto=tcp app=HTTPS",
+  "CEF:0|Palo Alto|Firewall|10.1|THREAT|Vulnerability Detected|8|src=203.0.113.77 dst=10.0.0.80 dpt=8080 spt=61000 act=reset-both proto=tcp msg=Apache Log4j RCE Attempt",
+  "CEF:0|Cisco|Firepower|6.7|430001|Malware File Blocked|9|src=10.0.0.99 dst=198.51.100.25 dpt=443 spt=49200 act=block proto=tcp msg=Trojan.Win32.Generic",
+  "CEF:0|CyberArk|Vault|12.2|101|Retrieve Password|2|src=192.168.1.10 dst=192.168.1.250 act=success msg=Safe access granted cs1=DomainAdmin",
+  "CEF:0|Fortinet|FortiWeb|7.0|3000|Cross Site Scripting|7|src=203.0.113.150 dst=10.0.0.5 dpt=443 spt=58000 act=deny proto=tcp msg=XSS vector detected in URL parameter",
+  "CEF:0|Palo Alto|Firewall|10.0|TRAFFIC|End of Session|1|src=192.168.1.50 dst=8.8.8.8 dpt=53 spt=62000 act=allow proto=udp",
+  "CEF:0|Symantec|Endpoint Protection|14.3|1|Trojan Horse Detected|8|src=192.168.1.120 dst=203.0.113.99 dpt=8080 spt=50001 act=quarantine msg=Trojan quarantined",
+  "CEF:0|McAfee|Network Security Platform|9.2|405001|Port Scan Detected|5|src=198.51.100.3 dst=10.0.0.0 dpt=0 spt=40000 act=alert proto=tcp msg=SYN stealth scan",
+  "CEF:0|Palo Alto|Firewall|10.0|102|Deny Rule Matched|5|src=10.0.0.200 dst=198.51.100.1 dpt=23 spt=45000 act=deny proto=tcp",
+  "CEF:0|CheckPoint|FireWall-1|R80|300|Drop Inbound Connection|4|src=203.0.113.2 dst=10.0.0.1 dpt=1433 spt=33333 act=drop proto=tcp msg=Drop Rule 12",
+  "CEF:0|Imperva|Incapsula|1.0|WAF_BLOCK|DDoS Attack Mitigated|9|src=198.51.100.180 dst=10.0.0.100 dpt=443 spt=65000 act=block proto=tcp msg=Layer 7 HTTP Flood blocked"
+]

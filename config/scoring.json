@@ -1,0 +1,9 @@
+{
+  "weights": {
+    "signature": 0.40,
+    "structural": 0.35,
+    "metadata": 0.25
+  },
+  "routing_threshold": 0.70,
+  "winner_margin": 0.10
+}

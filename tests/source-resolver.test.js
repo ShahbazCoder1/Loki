@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolve } from "../ulpf-prototype/modules/source-resolver.js";
+import { resolve } from "../modules/source-resolver.js";
 
 test("Source Resolver - Cisco ASA Log Resolution", () => {
   const eventEnvelope = {
