@@ -1,10 +1,10 @@
 import express from "express";
-import { receive } from "../modules/receiver.js";
+import { processLogPipeline } from "../modules/pipeline.js";
 
 const router = express.Router();
 
 // POST /api/logs
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   const { raw } = req.body;
 
   // Validate request body
@@ -15,11 +15,37 @@ router.post("/", (req, res) => {
   }
 
   try {
-    const event = receive(raw);
+    const result = await processLogPipeline(raw);
 
-    return res.status(201).json(event);
+    if (result.status === "quarantined") {
+      return res.status(200).json({
+        status: "quarantined",
+        reason: result.reason,
+        event_id: result.event_id,
+        resolution: result.resolution,
+        event: result.event
+      });
+    }
+
+    if (result.status === "dead-letter") {
+      return res.status(200).json({
+        status: "dead-letter",
+        reason: result.reason,
+        event_id: result.event_id,
+        parseResult: result.parseResult,
+        event: result.event
+      });
+    }
+
+    return res.status(200).json({
+      status: "parsed",
+      event_id: result.event_id,
+      resolution: result.resolution,
+      parseResult: result.parseResult,
+      event: result.event
+    });
   } catch (error) {
-    console.error("Error receiving log:", error);
+    console.error("Error processing log pipeline:", error);
 
     return res.status(500).json({
       error: "Failed to process log"
