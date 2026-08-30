@@ -26,7 +26,7 @@ const UNKNOWN_SAMPLE = "Oct 11 14:32:01 unknown-host random_process[1234]: Compl
 test("Integration - Full Pipeline for Cisco ASA (Receiver -> Source Resolver -> Parser Engine)", async () => {
   const result = await processLogPipeline(CISCO_SAMPLE, { skipExporter: true });
 
-  assert.equal(result.status, "parsed");
+  assert.equal(result.status, "exported");
   assert.ok(result.event_id);
   assert.equal(result.resolution.status, "RESOLVED");
   assert.equal(result.resolution.parserId, "cisco_asa_v1.0");
@@ -34,14 +34,18 @@ test("Integration - Full Pipeline for Cisco ASA (Receiver -> Source Resolver -> 
   assert.equal(result.parseResult.parserVersion, "1.0");
   assert.equal(result.parseResult.parsedFields.src_ip, "10.0.0.5");
   assert.equal(result.parseResult.parsedFields.dst_ip, "192.168.1.1");
-  assert.equal(result.event.processing_status, "PARSED");
-  assert.ok(result.event.processing_state_history.includes("PARSED"));
+  assert.equal(result.event.processing_status, "EXPORTED");
+  assert.ok(result.event.processing_state_history.includes("NORMALIZED"));
+  assert.ok(result.event.processing_state_history.includes("VALIDATED"));
+  assert.ok(result.event.processing_state_history.includes("EXPORTED"));
+  assert.equal(result.event.normalized.src_endpoint.ip, "10.0.0.5");
+  assert.ok(result.event.field_lineage["src_endpoint.ip"]);
 });
 
 test("Integration - Full Pipeline for Fortinet FortiGate", async () => {
   const result = await processLogPipeline(FORTINET_SAMPLE, { skipExporter: true });
 
-  assert.equal(result.status, "parsed");
+  assert.equal(result.status, "exported");
   assert.equal(result.resolution.status, "RESOLVED");
   assert.equal(result.resolution.parserId, "fortinet_v1.0");
   assert.equal(result.parseResult.validationStatus, "PASS");
@@ -51,7 +55,7 @@ test("Integration - Full Pipeline for Fortinet FortiGate", async () => {
 test("Integration - Full Pipeline for Generic CEF", async () => {
   const result = await processLogPipeline(CEF_SAMPLE, { skipExporter: true });
 
-  assert.equal(result.status, "parsed");
+  assert.equal(result.status, "exported");
   assert.equal(result.resolution.status, "RESOLVED");
   assert.equal(result.resolution.parserId, "generic_cef_v1.0");
   assert.equal(result.parseResult.validationStatus, "PASS");
@@ -118,6 +122,9 @@ extraction_rules:
 required_fields:
   - "src_ip"
   - "action"
+normalization_mapping:
+  src_ip: "src_endpoint.ip"
+  action: "action"
 `;
 
   try {
@@ -132,7 +139,7 @@ required_fields:
 
     // Verify pipeline uses the newly reloaded parser
     const pipelineResult = await processLogPipeline("CUSTOM_SYS_PREFIX src=172.16.0.42 action=ALLOW", { skipExporter: true });
-    assert.equal(pipelineResult.status, "parsed");
+    assert.equal(pipelineResult.status, "exported");
     assert.equal(pipelineResult.resolution.parserId, "temp_custom_v1.0");
     assert.equal(pipelineResult.parseResult.parsedFields.src_ip, "172.16.0.42");
 

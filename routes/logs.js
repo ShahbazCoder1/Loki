@@ -21,6 +21,7 @@ router.post("/", async (req, res) => {
       return res.status(200).json({
         status: "quarantined",
         reason: result.reason,
+        persistenceError: result.persistenceError,
         event_id: result.event_id,
         resolution: result.resolution,
         event: result.event
@@ -31,6 +32,7 @@ router.post("/", async (req, res) => {
       return res.status(200).json({
         status: "dead-letter",
         reason: result.reason,
+        persistenceError: result.persistenceError,
         event_id: result.event_id,
         parseResult: result.parseResult,
         event: result.event
@@ -38,10 +40,12 @@ router.post("/", async (req, res) => {
     }
 
     return res.status(200).json({
-      status: "parsed",
+      status: "exported",
       event_id: result.event_id,
       resolution: result.resolution,
       parseResult: result.parseResult,
+      normalized: result.normResult?.normalizedFields,
+      schemaValidation: result.schemaCheck,
       event: result.event
     });
   } catch (error) {

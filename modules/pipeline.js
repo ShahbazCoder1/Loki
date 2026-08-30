@@ -2,18 +2,51 @@ import { receive } from "./receiver.js";
 import { resolve } from "./source-resolver.js";
 import { parse } from "./parser-engine.js";
 import { getLoadedParsers, getParser } from "./parser-manager.js";
-import { quarantineEvent, deadLetterEvent } from "./exporter.js";
+import { normalize } from "./normalizer.js";
+import { validate } from "./schema-validator.js";
+import { addProvenance } from "./provenance.js";
+import { exportEvent, quarantineEvent, deadLetterEvent } from "./exporter.js";
 
-/**
- * Process a raw log or existing event envelope through the integrated pipeline:
- * Receiver -> Source Resolver -> Parser Engine -> next pipeline stage.
- * 
- * @param {string|Object} rawLogOrEnvelope - Raw log string or existing event envelope
- * @param {Object} [options] - Optional override settings (parsers, parsersDir, configPath)
- * @returns {Promise<Object>} Processed result with event envelope, status, resolution, and parseResult
- */
+function sourceDetails(resolution) {
+  return {
+    type: resolution.parserId,
+    resolution_method: "confidence_scoring",
+    resolution_confidence: resolution.confidence,
+    resolution_evidence: resolution.evidence,
+    resolution_status: resolution.status
+  };
+}
+
+/** Assemble the completed and traceable event envelope. */
+export function assembleCompleteEvent(event, resolution, parseResult, normResult) {
+  return {
+    ...event,
+    source: sourceDetails(resolution),
+    parsed: {
+      parser_id: resolution.parserId,
+      parser_version: parseResult.parserVersion,
+      fields: parseResult.parsedFields,
+      validation_status: parseResult.validationStatus,
+      validation_errors: parseResult.errors
+    },
+    normalized: normResult.normalizedFields,
+    field_lineage: normResult.fieldLineage
+  };
+}
+
+function removeLastExportState(event) {
+  if (event.provenance?.at(-1)?.stage === "export") event.provenance.pop();
+  if (event.processing_state_history?.at(-1) === "EXPORTED") {
+    event.processing_state_history.pop();
+  }
+}
+
+function errorMessage(error) {
+  return error?.message || error?.name || String(error || "Unknown exporter error");
+}
+
+/** Receiver -> Resolver -> Parser -> Normalizer -> Validator -> Exporter. */
 export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
-  // 1. Ingestion / Event Envelope Creation
   let event;
   if (typeof rawLogOrEnvelope === "string") {
     event = receive(rawLogOrEnvelope);
@@ -23,54 +56,65 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
     throw new Error("Invalid input: must be a raw log string or valid event envelope");
   }
 
-  // 2. Source Resolver Stage
+  addProvenance(event, "ingest", "http-receiver", "1.0", "success", {
+    event_id: event.event_id
+  });
+
   const loadedParsers = options.parsers || getLoadedParsers();
   const resolution = resolve(event, { parsers: loadedParsers, ...options });
+  event.source = sourceDetails(resolution);
+  addProvenance(
+    event,
+    "resolve",
+    "source-resolver",
+    "1.0",
+    resolution.status === "RESOLVED"
+      ? "success"
+      : resolution.status === "UNKNOWN" ? "failure" : "partial",
+    resolution
+  );
 
-  // Attach resolution details to event envelope
-  event.source = {
-    parserId: resolution.parserId,
-    confidence: resolution.confidence,
-    evidence: resolution.evidence,
-    status: resolution.status
-  };
-
-  // 3. Handle UNKNOWN and AMBIGUOUS Resolution States
   if (resolution.status === "UNKNOWN" || resolution.status === "AMBIGUOUS") {
-    event.processing_status = "QUARANTINED";
-    if (Array.isArray(event.processing_state_history)) {
-      event.processing_state_history.push("QUARANTINED");
-    }
-
     const reason = resolution.status === "UNKNOWN"
       ? `Unknown log format (confidence: ${resolution.confidence})`
       : `Ambiguous source resolution (top parserId: ${resolution.parserId}, confidence: ${resolution.confidence})`;
+    addProvenance(event, "quarantine", "pipeline-router", "1.0", "success", {
+      reason,
+      resolution
+    });
 
+    let persistenceError = null;
     if (!options.skipExporter) {
       try {
         await quarantineEvent(event, reason);
-      } catch (_) {
-        // Exporter errors handled gracefully if Elasticsearch is offline
+      } catch (error) {
+        persistenceError = errorMessage(error);
+        event.provenance.push({
+          stage: "export",
+          component: "elasticsearch-exporter",
+          component_version: "1.0",
+          timestamp: new Date().toISOString(),
+          status: "failure",
+          result: { target: "ulpf-quarantine", error: persistenceError }
+        });
       }
     }
 
     return {
       status: "quarantined",
       reason,
+      persistenceError,
       resolution,
       event_id: event.event_id,
       event
     };
   }
 
-  // 4. If RESOLVED, pass parserId and eventEnvelope to Parser Engine
   const parserDef = options.parserDefinition || getParser(resolution.parserId);
   const parseResult = parse(event, resolution.parserId, {
-    parserDefinition: parserDef,
-    ...options
+    ...options,
+    parserDefinition: parserDef
   });
-
-  // Attach parsing details to event envelope
   event.parsed = {
     parser_id: resolution.parserId,
     parser_version: parseResult.parserVersion,
@@ -78,25 +122,31 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
     validation_status: parseResult.validationStatus,
     validation_errors: parseResult.errors
   };
+  addProvenance(
+    event,
+    "parse",
+    "parser-engine",
+    parseResult.parserVersion,
+    parseResult.validationStatus === "PASS"
+      ? "success"
+      : parseResult.validationStatus === "PARTIAL" ? "partial" : "failure",
+    parseResult
+  );
 
-  // 5. Handle Parsing Validation FAIL
   if (parseResult.validationStatus === "FAIL") {
-    event.processing_status = "DEAD_LETTER";
-    if (Array.isArray(event.processing_state_history)) {
-      event.processing_state_history.push("DEAD_LETTER");
-    }
-
+    addProvenance(event, "dead_letter", "pipeline-router", "1.0", "failure", parseResult.errors);
+    let persistenceError = null;
     if (!options.skipExporter) {
       try {
         await deadLetterEvent(event, parseResult.errors);
-      } catch (_) {
-        // Exporter errors handled gracefully if Elasticsearch is offline
+      } catch (error) {
+        persistenceError = errorMessage(error);
       }
     }
-
     return {
       status: "dead-letter",
       reason: parseResult.errors.join("; ") || "Parsing validation failed",
+      persistenceError,
       resolution,
       parseResult,
       event_id: event.event_id,
@@ -104,17 +154,82 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
     };
   }
 
-  // 6. Parsing Validation PASS or PARTIAL -> Advance to next stage (PARSED)
-  event.processing_status = "PARSED";
-  if (Array.isArray(event.processing_state_history)) {
-    event.processing_state_history.push("PARSED");
+  const normResult = normalize(event, parseResult, resolution.parserId, {
+    parserDefinition: parserDef
+  });
+  event.normalized = normResult.normalizedFields;
+  event.field_lineage = normResult.fieldLineage;
+  addProvenance(event, "normalize", "ocsf-normalizer", "1.0", "success", {
+    fields_normalized: Object.keys(normResult.fieldLineage)
+  });
+
+  const schemaCheck = validate(normResult.normalizedFields, {
+    schema: options.schema,
+    schemaPath: options.schemaPath
+  });
+  event.normalized.schema_validation_status = schemaCheck.valid ? "PASS" : "FAIL";
+  event.normalized.schema_validation_errors = schemaCheck.errors;
+  addProvenance(
+    event,
+    "validate",
+    "schema-validator",
+    "1.0",
+    schemaCheck.valid ? "success" : "failure",
+    schemaCheck
+  );
+
+  if (!schemaCheck.valid) {
+    addProvenance(event, "dead_letter", "pipeline-router", "1.0", "failure", schemaCheck.errors);
+    let persistenceError = null;
+    if (!options.skipExporter) {
+      try {
+        await deadLetterEvent(event, schemaCheck.errors);
+      } catch (error) {
+        persistenceError = errorMessage(error);
+      }
+    }
+    return {
+      status: "dead-letter",
+      reason: schemaCheck.errors.join("; "),
+      persistenceError,
+      resolution,
+      parseResult,
+      normResult,
+      schemaCheck,
+      event_id: event.event_id,
+      event
+    };
+  }
+
+  event = assembleCompleteEvent(event, resolution, parseResult, normResult);
+  event.normalized.schema_validation_status = "PASS";
+  event.normalized.schema_validation_errors = [];
+
+  addProvenance(event, "export", "elasticsearch-exporter", "1.0", "success", {
+    index: "ulpf-events",
+    skipped: Boolean(options.skipExporter)
+  });
+
+  if (!options.skipExporter) {
+    try {
+      await exportEvent(event);
+    } catch (error) {
+      removeLastExportState(event);
+      addProvenance(event, "export", "elasticsearch-exporter", "1.0", "failure", {
+        index: "ulpf-events",
+        error: errorMessage(error)
+      });
+      throw error;
+    }
   }
 
   return {
-    status: "parsed",
+    status: "exported",
     event_id: event.event_id,
     resolution,
     parseResult,
+    normResult,
+    schemaCheck,
     event
   };
 }

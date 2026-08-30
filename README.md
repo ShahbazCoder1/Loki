@@ -1,6 +1,6 @@
 # SIH-26156
 
-A Unified Logging Platform & Event System prototype built with Node.js and Express.
+A Universal Log Pre-processing Framework prototype built with Node.js and Express. It preserves raw security logs, resolves and parses known formats, normalizes them to an OCSF-aligned schema with field-level lineage, and quarantines unknown formats for controlled parser onboarding.
 
 ---
 
@@ -9,22 +9,39 @@ A Unified Logging Platform & Event System prototype built with Node.js and Expre
 ### Prerequisites
 
 Make sure you have the following installed on your local environment:
-- [Node.js](https://nodejs.org/) (v16.x or higher recommended)
+- [Node.js](https://nodejs.org/) (v20.x or higher)
 - [npm](https://www.npmjs.com/) (comes with Node.js)
 - [Git](https://git-scm.com/)
+- Elasticsearch 8.x at `http://localhost:9200`
 
 ### Installation & Running Locally
 
 1. **Install Dependencies**
    ```bash
-   npm install
+   npm ci
    ```
 
 2. **Start the Server**
    ```bash
-   node ulpf-prototype/server.js
+   npm start
    ```
    The ULPF Prototype server will start running at `http://localhost:3000`.
+
+3. **Create Elasticsearch Indices**
+   ```bash
+   npm run setup:indices
+   ```
+
+## API Endpoints
+
+- `POST /api/logs` — submit `{ "raw": "..." }` for complete processing.
+- `GET /api/health` — check Elasticsearch connectivity and loaded parser count.
+- `GET /api/parsers` — list active versioned parsers.
+- `POST /api/parsers` — upload a parser using `{ "yaml_content": "..." }`.
+- `GET /api/events/:event_id/lineage` — retrieve field lineage and provenance.
+- `GET /api/quarantine` — list quarantined events.
+- `GET /api/quarantine/clusters` — cluster quarantined events by structure.
+- `/api/intelligence/*` — generate, test, and approve candidate parsers.
 
 ---
 

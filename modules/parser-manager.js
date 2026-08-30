@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 const parsersMap = new Map();
 let activeWatcher = null;
 let watcherDebounceTimer = null;
+let pollTimer = null;
 let defaultParsersDir = null;
 
 /**
@@ -142,7 +143,8 @@ export function startWatcher(parsersDir, debounceMs = 100) {
 
   try {
     activeWatcher = fs.watch(targetDir, (eventType, filename) => {
-      if (!filename || (!filename.endsWith(".yaml") && !filename.endsWith(".yml"))) {
+      const safeName = Buffer.isBuffer(filename) ? filename.toString() : filename;
+      if (safeName && !safeName.endsWith(".yaml") && !safeName.endsWith(".yml") && !safeName.endsWith(".tmp")) {
         return;
       }
 
@@ -152,20 +154,15 @@ export function startWatcher(parsersDir, debounceMs = 100) {
       }
 
       watcherDebounceTimer = setTimeout(() => {
-        const fullPath = path.join(targetDir, filename);
-
-        if (!fs.existsSync(fullPath)) {
-          // File deleted
-          parsersMap.delete(filename);
-        } else {
-          // File created or modified
-          const updatedParser = parseYamlFile(fullPath, filename);
-          if (updatedParser) {
-            parsersMap.set(filename, updatedParser);
-          }
-        }
+        loadAllParsers(targetDir);
       }, debounceMs);
     });
+
+    // Some filesystems coalesce or miss watch events. Polling keeps activation
+    // deterministic across macOS, Linux, Windows, and container mounts.
+    pollTimer = setInterval(() => {
+      loadAllParsers(targetDir);
+    }, Math.max(150, debounceMs * 4));
 
     // Handle watcher errors safely
     if (activeWatcher && typeof activeWatcher.on === "function") {
@@ -185,6 +182,10 @@ export function stopWatcher() {
   if (watcherDebounceTimer) {
     clearTimeout(watcherDebounceTimer);
     watcherDebounceTimer = null;
+  }
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
   }
   if (activeWatcher) {
     try {

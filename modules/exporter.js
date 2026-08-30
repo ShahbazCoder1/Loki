@@ -1,7 +1,9 @@
 import { Client } from "@elastic/elasticsearch";
 
 const client = new Client({
-  node: "http://localhost:9200"
+  node: process.env.ELASTICSEARCH_URL || "http://localhost:9200",
+  requestTimeout: Number(process.env.ELASTICSEARCH_REQUEST_TIMEOUT_MS || 3000),
+  maxRetries: 0
 });
 
 export async function exportEvent(completeEventEnvelope) {

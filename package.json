@@ -2,9 +2,11 @@
   "name": "sih-26156",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
-  "main": "index.js",
+  "description": "Universal Log Pre-processing Framework prototype",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
+    "setup:indices": "node scripts/setup-indices.js",
     "test": "node --test tests/*.test.js"
   },
   "keywords": [],
