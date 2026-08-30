@@ -2,7 +2,14 @@ import { receive } from "./receiver.js";
 import { resolve } from "./source-resolver.js";
 import { parse } from "./parser-engine.js";
 import { getLoadedParsers, getParser } from "./parser-manager.js";
-import { quarantineEvent, deadLetterEvent } from "./exporter.js";
+import {
+  quarantineEvent,
+  deadLetterEvent,
+  exportEvent
+} from "./exporter.js";
+import { normalize } from "./normalizer.js";
+import { validate } from "./schema-validator.js";
+import { assembleEvent } from "./event-assembler.js";
 
 /**
  * Process a raw log or existing event envelope through the integrated pipeline:
@@ -104,10 +111,100 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
     };
   }
 
-  // 6. Parsing Validation PASS or PARTIAL -> Advance to next stage (PARSED)
+  // 6. Parsing successful
   event.processing_status = "PARSED";
+
   if (Array.isArray(event.processing_state_history)) {
     event.processing_state_history.push("PARSED");
+  }
+
+  // 7. Normalize parsed fields
+  const normResult = normalize(
+    event,
+    parseResult,
+    resolution.parserId
+  );
+
+  event.normalized = normResult.normalizedFields;
+  event.field_lineage = normResult.fieldLineage;
+
+  event.processing_status = "NORMALIZED";
+
+  if (Array.isArray(event.processing_state_history)) {
+    event.processing_state_history.push("NORMALIZED");
+  }
+
+  // 8. Validate normalized fields against schema
+  const schemaCheck = validate(normResult.normalizedFields);
+
+  if (!schemaCheck.valid) {
+    event.processing_status = "DEAD_LETTER";
+
+    if (Array.isArray(event.processing_state_history)) {
+      event.processing_state_history.push("DEAD_LETTER");
+    }
+
+    if (!options.skipExporter) {
+      try {
+        await deadLetterEvent(event, schemaCheck.errors);
+      } catch (_) {
+        // Exporter errors handled gracefully if Elasticsearch is offline
+      }
+    }
+
+    return {
+      status: "dead-letter",
+      reason: schemaCheck.errors.join("; ") || "Schema validation failed",
+      resolution,
+      parseResult,
+      normResult,
+      schemaCheck,
+      event_id: event.event_id,
+      event
+    };
+  }
+
+  // 9. Schema validation successful
+  event.processing_status = "VALIDATED";
+
+  if (Array.isArray(event.processing_state_history)) {
+    event.processing_state_history.push("VALIDATED");
+  }
+
+  // 10. Assemble complete event
+  const completeEvent = assembleEvent(
+    event,
+    resolution,
+    parseResult,
+    normResult
+  );
+
+  // 11. Export complete event
+  if (!options.skipExporter) {
+    completeEvent.processing_status = "EXPORTED";
+
+    if (Array.isArray(completeEvent.processing_state_history)) {
+      completeEvent.processing_state_history.push("EXPORTED");
+    }
+
+    await exportEvent(completeEvent);
+
+    return {
+      status: "exported",
+      event_id: event.event_id,
+      resolution,
+      parseResult,
+      normResult,
+      schemaCheck,
+      event: completeEvent
+    };
+  }
+
+  // When exporter is skipped, return "parsed" as the final status
+  completeEvent.processing_status = "PARSED";
+
+  if (Array.isArray(completeEvent.processing_state_history)) {
+    completeEvent.processing_state_history.push("PARSED");
   }
 
   return {
@@ -115,8 +212,8 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
     event_id: event.event_id,
     resolution,
     parseResult,
-    event
+    normResult,
+    schemaCheck,
+    event: completeEvent
   };
 }
-
-export default processLogPipeline;

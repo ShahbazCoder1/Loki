@@ -5,10 +5,21 @@ const client = new Client({
 });
 
 export async function exportEvent(completeEventEnvelope) {
+  console.log(
+    "EXPORTING STATUS:",
+    completeEventEnvelope.processing_status
+  );
+
+  console.log(
+    "EXPORTING HISTORY:",
+    completeEventEnvelope.processing_state_history
+  );
+
   return client.index({
     index: "ulpf-events",
     id: completeEventEnvelope.event_id,
-    document: completeEventEnvelope
+    document: completeEventEnvelope,
+    refresh: true
   });
 }
 
@@ -22,7 +33,8 @@ export async function quarantineEvent(eventEnvelope, reason) {
   return client.index({
     index: "ulpf-quarantine",
     id: eventEnvelope.event_id,
-    document
+    document,
+    refresh: true
   });
 }
 
@@ -30,7 +42,9 @@ export async function deadLetterEvent(eventEnvelope, error) {
   const document = {
     ...eventEnvelope,
     dead_letter_error: {
-      message: error.message || String(error),
+      message: Array.isArray(error)
+        ? error.join("; ")
+        : error?.message || String(error),
       timestamp: new Date().toISOString()
     }
   };
@@ -38,7 +52,8 @@ export async function deadLetterEvent(eventEnvelope, error) {
   return client.index({
     index: "ulpf-deadletter",
     id: eventEnvelope.event_id,
-    document
+    document,
+    refresh: true
   });
 }
 
