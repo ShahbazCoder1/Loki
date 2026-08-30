@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 // In-memory parser registry: Map<filename, parserObject>
 const parsersMap = new Map();
 let activeWatcher = null;
+let activePoller = null;
 let watcherDebounceTimer = null;
 let defaultParsersDir = null;
 
@@ -175,6 +176,13 @@ export function startWatcher(parsersDir, debounceMs = 100) {
     // Gracefully handle watcher failure
   }
 
+  // fs.watch behavior differs across filesystems and container mounts. Polling
+  // keeps hot reload reliable when native change notifications are dropped.
+  activePoller = setInterval(() => {
+    loadAllParsers(targetDir);
+  }, Math.max(50, debounceMs));
+  activePoller.unref?.();
+
   return activeWatcher;
 }
 
@@ -191,6 +199,10 @@ export function stopWatcher() {
       activeWatcher.close();
     } catch (_) {}
     activeWatcher = null;
+  }
+  if (activePoller) {
+    clearInterval(activePoller);
+    activePoller = null;
   }
 }
 

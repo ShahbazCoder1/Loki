@@ -131,7 +131,10 @@ function loadParsers(parsersDir) {
           parsers.push(parsed);
         }
       } catch (err) {
-        console.warn(`Warning: Could not parse YAML file at ${fullPath}:`, err.message);
+        // A hot-reloaded parser can disappear between readdir and readFile.
+        if (err.code !== "ENOENT") {
+          console.warn(`Warning: Could not parse YAML file at ${fullPath}:`, err.message);
+        }
       }
     }
   }

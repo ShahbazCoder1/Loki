@@ -1,11 +1,13 @@
-function stageToState(stage, status) {
+export function stageToState(stage, status) {
   const stateMap = {
     ingest: "RECEIVED",
     resolve: "RESOLVED",
     parse: "PARSED",
     normalize: "NORMALIZED",
     validate: "VALIDATED",
-    export: "EXPORTED"
+    export: "EXPORTED",
+    quarantine: "QUARANTINED",
+    dead_letter: "DEAD_LETTER"
   };
 
   if (status === "failure") {
@@ -29,6 +31,13 @@ export function addProvenance(
 ) {
   const state = stageToState(stage, status);
 
+  if (!Array.isArray(eventEnvelope.provenance)) {
+    eventEnvelope.provenance = [];
+  }
+  if (!Array.isArray(eventEnvelope.processing_state_history)) {
+    eventEnvelope.processing_state_history = [];
+  }
+
   eventEnvelope.provenance.push({
     stage,
     component,
@@ -38,7 +47,9 @@ export function addProvenance(
     result
   });
 
-  eventEnvelope.processing_state_history.push(state);
+  if (eventEnvelope.processing_state_history.at(-1) !== state) {
+    eventEnvelope.processing_state_history.push(state);
+  }
   eventEnvelope.processing_status = state;
 
   return eventEnvelope;

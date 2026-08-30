@@ -1,24 +1,30 @@
 import express from "express";
 import { client } from "../modules/exporter.js";
+import { getLoadedParsers } from "../modules/parser-manager.js";
 
-const router = express.Router();
+export function createHealthRouter({ esClient = client } = {}) {
+  const router = express.Router();
 
-router.get("/", async (req, res) => {
-  try {
-    await client.ping();
+  router.get("/", async (_req, res) => {
+    const parsersLoaded = getLoadedParsers().length;
+    try {
+      await esClient.ping();
 
-    res.json({
-      status: "ok",
-      elasticsearch: "connected",
-      parsers_loaded: 3
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: "error",
-      elasticsearch: "disconnected",
-      parsers_loaded: 3
-    });
-  }
-});
+      return res.json({
+        status: "ok",
+        elasticsearch: "connected",
+        parsers_loaded: parsersLoaded
+      });
+    } catch (_error) {
+      return res.status(503).json({
+        status: "error",
+        elasticsearch: "disconnected",
+        parsers_loaded: parsersLoaded
+      });
+    }
+  });
 
-export default router;
+  return router;
+}
+
+export default createHealthRouter();
