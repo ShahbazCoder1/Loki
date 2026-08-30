@@ -1,23 +1,34 @@
-export function assembleEvent(
-  event,
+export function assembleCompleteEvent(
+  eventEnvelope,
   resolution,
   parseResult,
   normResult
 ) {
   return {
-    ...event,
+    ...eventEnvelope,
 
     source: {
-      parser_id: resolution.parserId,
-      confidence: resolution.confidence,
-      evidence: resolution.evidence,
-      status: resolution.status
+      type: resolution.parserId,
+      resolution_method: "confidence_scoring",
+      resolution_confidence: resolution.confidence,
+      resolution_evidence: resolution.evidence
     },
 
-    parsed: parseResult.parsedFields,
+    parsed: {
+      parser_id: resolution.parserId,
+      parser_version: parseResult.parserVersion,
+      fields: parseResult.parsedFields,
+      validation_status: parseResult.validationStatus,
+      validation_errors: parseResult.errors
+    },
 
     normalized: normResult.normalizedFields,
 
-    field_lineage: normResult.fieldLineage
+    field_lineage: normResult.fieldLineage,
+
+    processing_status: "EXPORTED"
   };
 }
+
+// Backward-compatible name for callers written before the complete envelope contract.
+export const assembleEvent = assembleCompleteEvent;
