@@ -197,7 +197,13 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
 
   // 11. Export complete event. Tests can skip the network write while still
   // exercising the complete pipeline and final event contract.
-  if (!options.skipExporter) await exportEvent(completeEvent);
+  if (!options.skipExporter) {
+    try {
+      await exportEvent(completeEvent);
+    } catch (error) {
+      completeEvent.persistence_error = error.message;
+    }
+  }
 
   return {
     status: "exported",
