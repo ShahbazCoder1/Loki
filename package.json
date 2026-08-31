@@ -5,7 +5,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test tests/*.test.js",
+    "seed-data": "node dashboards/seed-sample-events.js",
+    "setup-dashboard": "node dashboards/setup-kibana-dashboard.js"
   },
   "keywords": [],
   "author": "",
