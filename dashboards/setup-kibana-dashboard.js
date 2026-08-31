@@ -1,0 +1,439 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const KIBANA_URL = process.env.KIBANA_URL || "http://127.0.0.1:5601";
+
+// 1. Data Views (Index Patterns)
+const indexPatterns = [
+  {
+    type: "index-pattern",
+    id: "ulpf-events-pattern",
+    attributes: {
+      title: "ulpf-events*",
+      timeFieldName: "received_at",
+      name: "ulpf-events"
+    }
+  },
+  {
+    type: "index-pattern",
+    id: "ulpf-quarantine-pattern",
+    attributes: {
+      title: "ulpf-quarantine*",
+      timeFieldName: "received_at",
+      name: "ulpf-quarantine"
+    }
+  },
+  {
+    type: "index-pattern",
+    id: "ulpf-deadletter-pattern",
+    attributes: {
+      title: "ulpf-deadletter*",
+      timeFieldName: "received_at",
+      name: "ulpf-deadletter"
+    }
+  }
+];
+
+// 2. Saved Searches
+const searches = [
+  {
+    type: "search",
+    id: "ulpf-recent-events-search",
+    attributes: {
+      title: "ULPF Recent Events",
+      description: "Recent processed events from ulpf-events",
+      columns: [
+        "received_at",
+        "source.type",
+        "normalized.action",
+        "normalized.severity_label",
+        "normalized.src_endpoint.ip",
+        "normalized.dst_endpoint.ip",
+        "raw.immutable_payload"
+      ],
+      sort: [["received_at", "desc"]],
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-events-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "search",
+    id: "ulpf-quarantine-search",
+    attributes: {
+      title: "ULPF Quarantined Events",
+      description: "Unrecognized / ambiguous events from ulpf-quarantine",
+      columns: [
+        "received_at",
+        "processing_status",
+        "quarantine_reason",
+        "raw.immutable_payload"
+      ],
+      sort: [["received_at", "desc"]],
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-quarantine-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "search",
+    id: "ulpf-deadletter-search",
+    attributes: {
+      title: "ULPF Dead-Letter Events",
+      description: "Failed validation events from ulpf-deadletter",
+      columns: [
+        "received_at",
+        "processing_status",
+        "dead_letter_error.message",
+        "raw.immutable_payload"
+      ],
+      sort: [["received_at", "desc"]],
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-deadletter-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  }
+];
+
+// 3. Visualizations
+const visualizations = [
+  {
+    type: "visualization",
+    id: "ulpf-vis-total-events",
+    attributes: {
+      title: "Total Events",
+      visState: JSON.stringify({
+        title: "Total Events",
+        type: "metric",
+        aggs: [{ id: "1", enabled: true, type: "count", schema: "metric", params: {} }]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-events-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "visualization",
+    id: "ulpf-vis-quarantine-count",
+    attributes: {
+      title: "Quarantined Count",
+      visState: JSON.stringify({
+        title: "Quarantined Count",
+        type: "metric",
+        aggs: [{ id: "1", enabled: true, type: "count", schema: "metric", params: {} }]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-quarantine-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "visualization",
+    id: "ulpf-vis-deadletter-count",
+    attributes: {
+      title: "Dead-Letter Count",
+      visState: JSON.stringify({
+        title: "Dead-Letter Count",
+        type: "metric",
+        aggs: [{ id: "1", enabled: true, type: "count", schema: "metric", params: {} }]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-deadletter-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "visualization",
+    id: "ulpf-vis-events-over-time",
+    attributes: {
+      title: "Events Over Time",
+      visState: JSON.stringify({
+        title: "Events Over Time",
+        type: "histogram",
+        aggs: [
+          { id: "1", enabled: true, type: "count", schema: "metric", params: {} },
+          { id: "2", enabled: true, type: "date_histogram", schema: "segment", params: { field: "received_at", interval: "auto" } }
+        ]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-events-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "visualization",
+    id: "ulpf-vis-events-by-severity",
+    attributes: {
+      title: "Events by Severity",
+      visState: JSON.stringify({
+        title: "Events by Severity",
+        type: "pie",
+        aggs: [
+          { id: "1", enabled: true, type: "count", schema: "metric", params: {} },
+          { id: "2", enabled: true, type: "terms", schema: "segment", params: { field: "normalized.severity_label.keyword", size: 10, order: "desc", orderBy: "1" } }
+        ]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-events-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "visualization",
+    id: "ulpf-vis-events-by-action",
+    attributes: {
+      title: "Events by Action",
+      visState: JSON.stringify({
+        title: "Events by Action",
+        type: "pie",
+        aggs: [
+          { id: "1", enabled: true, type: "count", schema: "metric", params: {} },
+          { id: "2", enabled: true, type: "terms", schema: "segment", params: { field: "normalized.action.keyword", size: 10, order: "desc", orderBy: "1" } }
+        ]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-events-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "visualization",
+    id: "ulpf-vis-events-by-parser",
+    attributes: {
+      title: "Events by Parser / Source",
+      visState: JSON.stringify({
+        title: "Events by Parser / Source",
+        type: "histogram",
+        aggs: [
+          { id: "1", enabled: true, type: "count", schema: "metric", params: {} },
+          { id: "2", enabled: true, type: "terms", schema: "segment", params: { field: "source.type.keyword", size: 10, order: "desc", orderBy: "1" } }
+        ]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-events-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "visualization",
+    id: "ulpf-vis-top-source-ips",
+    attributes: {
+      title: "Top Source IPs",
+      visState: JSON.stringify({
+        title: "Top Source IPs",
+        type: "table",
+        aggs: [
+          { id: "1", enabled: true, type: "count", schema: "metric", params: {} },
+          { id: "2", enabled: true, type: "terms", schema: "bucket", params: { field: "normalized.src_endpoint.ip.keyword", size: 10, order: "desc", orderBy: "1" } }
+        ]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-events-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  },
+  {
+    type: "visualization",
+    id: "ulpf-vis-top-dst-ips",
+    attributes: {
+      title: "Top Destination IPs",
+      visState: JSON.stringify({
+        title: "Top Destination IPs",
+        type: "table",
+        aggs: [
+          { id: "1", enabled: true, type: "count", schema: "metric", params: {} },
+          { id: "2", enabled: true, type: "terms", schema: "bucket", params: { field: "normalized.dst_endpoint.ip.keyword", size: 10, order: "desc", orderBy: "1" } }
+        ]
+      }),
+      uiStateJSON: "{}",
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          index: "ulpf-events-pattern",
+          query: { query: "", language: "kuery" },
+          filter: []
+        })
+      }
+    }
+  }
+];
+
+// 4. Dashboard Panels & Layout
+const dashboardPanels = [
+  { gridData: { x: 0, y: 0, w: 16, h: 6, i: "1" }, panelIndex: "1", panelRefName: "panel_1" },
+  { gridData: { x: 16, y: 0, w: 16, h: 6, i: "2" }, panelIndex: "2", panelRefName: "panel_2" },
+  { gridData: { x: 32, y: 0, w: 16, h: 6, i: "3" }, panelIndex: "3", panelRefName: "panel_3" },
+  { gridData: { x: 0, y: 6, w: 24, h: 12, i: "4" }, panelIndex: "4", panelRefName: "panel_4" },
+  { gridData: { x: 24, y: 6, w: 24, h: 12, i: "5" }, panelIndex: "5", panelRefName: "panel_5" },
+  { gridData: { x: 0, y: 18, w: 24, h: 12, i: "6" }, panelIndex: "6", panelRefName: "panel_6" },
+  { gridData: { x: 24, y: 18, w: 24, h: 12, i: "7" }, panelIndex: "7", panelRefName: "panel_7" },
+  { gridData: { x: 0, y: 30, w: 24, h: 12, i: "8" }, panelIndex: "8", panelRefName: "panel_8" },
+  { gridData: { x: 24, y: 30, w: 24, h: 12, i: "9" }, panelIndex: "9", panelRefName: "panel_9" },
+  { gridData: { x: 0, y: 42, w: 48, h: 15, i: "10" }, panelIndex: "10", panelRefName: "panel_10" },
+  { gridData: { x: 0, y: 57, w: 24, h: 15, i: "11" }, panelIndex: "11", panelRefName: "panel_11" },
+  { gridData: { x: 24, y: 57, w: 24, h: 15, i: "12" }, panelIndex: "12", panelRefName: "panel_12" }
+];
+
+const dashboardReferences = [
+  { name: "panel_1", type: "visualization", id: "ulpf-vis-total-events" },
+  { name: "panel_2", type: "visualization", id: "ulpf-vis-quarantine-count" },
+  { name: "panel_3", type: "visualization", id: "ulpf-vis-deadletter-count" },
+  { name: "panel_4", type: "visualization", id: "ulpf-vis-events-over-time" },
+  { name: "panel_5", type: "visualization", id: "ulpf-vis-events-by-severity" },
+  { name: "panel_6", type: "visualization", id: "ulpf-vis-events-by-action" },
+  { name: "panel_7", type: "visualization", id: "ulpf-vis-events-by-parser" },
+  { name: "panel_8", type: "visualization", id: "ulpf-vis-top-source-ips" },
+  { name: "panel_9", type: "visualization", id: "ulpf-vis-top-dst-ips" },
+  { name: "panel_10", type: "search", id: "ulpf-recent-events-search" },
+  { name: "panel_11", type: "search", id: "ulpf-quarantine-search" },
+  { name: "panel_12", type: "search", id: "ulpf-deadletter-search" }
+];
+
+const dashboard = {
+  type: "dashboard",
+  id: "ulpf-main-dashboard",
+  attributes: {
+    title: "ULPF Security & Log Analytics Overview",
+    description: "Real-time log analytics dashboard for Universal Log Pre-processing Framework (ULPF)",
+    panelsJSON: JSON.stringify(dashboardPanels),
+    optionsJSON: JSON.stringify({ hidePanelTitles: false, useMargins: true }),
+    kibanaSavedObjectMeta: {
+      searchSourceJSON: JSON.stringify({
+        query: { query: "", language: "kuery" },
+        filter: []
+      })
+    }
+  },
+  references: dashboardReferences
+};
+
+// Helper function to save a object to Kibana API
+async function saveSavedObject(obj) {
+  const url = `${KIBANA_URL}/api/saved_objects/${obj.type}/${obj.id}?overwrite=true`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "kbn-xsrf": "true"
+    },
+    body: JSON.stringify({
+      attributes: obj.attributes,
+      references: obj.references || []
+    })
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Failed to save ${obj.type}:${obj.id} - ${res.status}: ${errorText}`);
+  }
+  return res.json();
+}
+
+async function exportNdjsonFile(allObjects) {
+  const ndjsonPath = path.join(__dirname, "ulpf-kibana-dashboard.ndjson");
+  const lines = allObjects.map(obj => JSON.stringify(obj)).join("\n");
+  fs.writeFileSync(ndjsonPath, lines + "\n", "utf-8");
+  console.log(`Exported NDJSON file to: ${ndjsonPath}`);
+}
+
+async function setupKibana() {
+  console.log(`Connecting to Kibana at ${KIBANA_URL}...`);
+
+  const allObjects = [
+    ...indexPatterns,
+    ...searches,
+    ...visualizations,
+    dashboard
+  ];
+
+  try {
+    // 1. Create Index Patterns
+    for (const pat of indexPatterns) {
+      await saveSavedObject(pat);
+      console.log(`[Data View] Created: ${pat.attributes.name} (${pat.id})`);
+    }
+
+    // 2. Create Saved Searches
+    for (const search of searches) {
+      await saveSavedObject(search);
+      console.log(`[Search] Created: ${search.attributes.title} (${search.id})`);
+    }
+
+    // 3. Create Visualizations
+    for (const vis of visualizations) {
+      await saveSavedObject(vis);
+      console.log(`[Visualization] Created: ${vis.attributes.title} (${vis.id})`);
+    }
+
+    // 4. Create Dashboard
+    await saveSavedObject(dashboard);
+    console.log(`[Dashboard] Created: ${dashboard.attributes.title} (${dashboard.id})`);
+
+    // 5. Generate NDJSON file
+    await exportNdjsonFile(allObjects);
+
+    console.log("\n=======================================================");
+    console.log("Kibana Dashboard Setup Completed Successfully!");
+    console.log(`View Dashboard at: ${KIBANA_URL}/app/dashboards#/view/${dashboard.id}`);
+    console.log("=======================================================");
+  } catch (err) {
+    console.error("Dashboard Setup Failed:", err.message);
+    process.exit(1);
+  }
+}
+
+setupKibana();
