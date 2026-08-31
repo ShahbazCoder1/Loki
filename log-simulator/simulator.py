@@ -117,7 +117,7 @@ def capture_real_host_logs(count=20):
                         elif line.startswith("Description:"):
                             desc = line.split("Description:", 1)[1].strip()
 
-                    now_str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                    now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                     formatted = f"{now_str} {computer} MSWinEventLog: Source={source} EventID={event_id} Level={level} Msg={desc or 'System event recorded'}"
                     logs.append(formatted)
         except Exception as e:
@@ -185,7 +185,7 @@ def random_cisco_asa():
 
 def random_fortinet():
     """Generate dynamic Fortinet FortiGate key-value log."""
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     date_str = now.strftime("%Y-%m-%d")
     time_str = now.strftime("%H:%M:%S")
     devname = random.choice(["FGT60E", "FGT100D", "FGT200E", "FGT300E", "FGT500E"])
@@ -226,7 +226,7 @@ def random_unknown():
     dst_ip = random.choice(INTERNAL_IPS)
     src_port = random.randint(1024, 65535)
     dst_port = random.choice(COMMON_PORTS)
-    now_iso = datetime.datetime.utcnow().isoformat() + "Z"
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
 
     templates = [
         f"<190>{now_iso} fw01 filterlog[1234]: 5,,,1000000103,em0,match,block,in,4,0x0,,64,12345,0,DF,6,tcp,60,{src_ip},{dst_ip},{src_port},{dst_port},0,S,123456789,,65535,,mss",
