@@ -264,7 +264,7 @@ function generateFallbackParser(cluster) {
  */
 export async function generateCandidateParser(cluster, options = {}) {
   const ollamaUrl = options.ollamaUrl || "http://localhost:11434/api/generate";
-  const model = options.model || "gemma3:4b";
+  const model = options.model || "gemma4:e2b";
   const samples = cluster.samples || [cluster.template];
 
   const prompt = `You are a log parsing expert. Analyze these perimeter security log samples from the same source device and generate a parser definition.
@@ -275,21 +275,56 @@ ${samples.join("\n")}
 STRUCTURAL TEMPLATE:
 ${cluster.template || ""}
 
-Generate a JSON object with:
-- parser_id: snake_case string (e.g. "juniper_srx_v1.0")
-- version: "1.0"
-- device_family: name of device/vendor (e.g. "Juniper SRX")
-- description: short description
-- detection: object with { signatures: [string], structure: "syslog_text"|"key_value"|"cef"|"json"|"csv", keywords: [string] }
-- extraction_rules: array of { field: string, regex: "regex with exactly one capture group ()" }
-- required_fields: array of field names that must be present
-- normalization_mapping: object mapping extracted field name to OCSF field path (e.g. "src_ip" -> "src_endpoint.ip", "action" -> "action")
+Generate a JSON object matching this EXACT schema structure:
 
-Return ONLY valid JSON matching this structure. No markdown formatting, no code fences, no extra text.`;
+{
+  "parser_id": "vendor_device_v1.0",
+  "version": "1.0",
+  "device_family": "Vendor Device",
+  "description": "Parses events from log source",
+  "detection": {
+    "signatures": ["keyword_or_sig"],
+    "structure": "syslog_text",
+    "keywords": ["keyword"]
+  },
+  "extraction_rules": [
+    {
+      "field": "timestamp",
+      "regex": "(\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}Z)"
+    },
+    {
+      "field": "src_ip",
+      "regex": "from (\\\\d{1,3}\\\\.\\\\d{1,3}\\\\.\\\\d{1,3}\\\\.\\\\d{1,3})"
+    },
+    {
+      "field": "src_port",
+      "regex": "port (\\\\d+)"
+    },
+    {
+      "field": "user",
+      "regex": "user (\\\\S+)"
+    }
+  ],
+  "required_fields": ["src_ip", "user"],
+  "normalization_mapping": {
+    "timestamp": "event_timestamp",
+    "src_ip": "src_endpoint.ip",
+    "src_port": "src_endpoint.port",
+    "user": "user.name"
+  }
+}
+
+CRITICAL RULES:
+- extraction_rules, required_fields, and normalization_mapping MUST be at the ROOT level of the JSON object, NOT nested inside detection!
+- detection must contain ONLY signatures, structure, and keywords.
+- Every field listed in required_fields MUST have a matching entry in extraction_rules with the EXACT same field name.
+- MANDATORY: The regex for EVERY rule in extraction_rules MUST place parentheses () around the captured value (e.g. "<\\\\d+>(\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}Z)" for timestamp). Without () parentheses, field extraction will fail!
+- Return ONLY valid JSON. No markdown formatting, no code fences, no extra text.`;
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    const timeoutMs = options.timeout || 30000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(ollamaUrl, {
       method: "POST",
@@ -312,14 +347,18 @@ Return ONLY valid JSON matching this structure. No markdown formatting, no code 
       responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
       const parsedCandidate = JSON.parse(responseText);
 
-      // Validate core properties
+      // Validate core properties and ensure extraction rules are valid JavaScript regexes
       if (parsedCandidate && parsedCandidate.detection && Array.isArray(parsedCandidate.extraction_rules)) {
         if (!parsedCandidate.parser_id) parsedCandidate.parser_id = "ai_candidate_v1.0";
         if (!parsedCandidate.version) parsedCandidate.version = "1.0";
         parsedCandidate.source = "ollama_" + model;
         parsedCandidate.is_generated = true;
         parsedCandidate.generated_at = new Date().toISOString();
-        return parsedCandidate;
+
+        const testRes = testCandidate(parsedCandidate, samples, []);
+        if (testRes.positive.passed > 0) {
+          return parsedCandidate;
+        }
       }
     }
   } catch (err) {
