@@ -3,7 +3,8 @@ import {
   clusterQuarantinedEvents,
   generateCandidateParser,
   testCandidate,
-  activateCandidate
+  activateCandidate,
+  analyzeSecurityQuestion
 } from "../modules/intelligence.js";
 
 const router = express.Router();
@@ -130,4 +131,50 @@ router.post("/approve", (req, res) => {
   }
 });
 
+// 5. POST /api/intelligence/analyze
+router.post("/analyze", async (req, res) => {
+  try {
+    const { question, model, options } = req.body || {};
+
+    if (!question || typeof question !== "string" || !question.trim()) {
+      return res.status(400).json({
+        error: "Question parameter is required and cannot be empty"
+      });
+    }
+
+    const result = await analyzeSecurityQuestion(question, { model, ...options });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Error analyzing security question:", error.message);
+
+    const isOffline = error.message.includes("Ollama service is not running") || error.message.includes("ECONNREFUSED");
+    const isTimeout = error.message.includes("timed out");
+    const statusCode = isOffline || isTimeout ? 503 : 500;
+
+    return res.status(statusCode).json({
+      error: error.message || "Failed to process question",
+      ollama_status: isOffline ? "offline" : isTimeout ? "timeout" : "error"
+    });
+  }
+});
+
+// 6. GET /api/intelligence/status
+router.get("/status", async (_req, res) => {
+  try {
+    const response = await fetch("http://localhost:11434/api/tags");
+    if (response.ok) {
+      const data = await response.json();
+      return res.json({
+        ollama_status: "online",
+        models: (data.models || []).map(m => m.name)
+      });
+    }
+    return res.json({ ollama_status: "offline", error: "Ollama returned non-200 status" });
+  } catch (_err) {
+    return res.json({ ollama_status: "offline", error: "Ollama service is unreachable at http://localhost:11434" });
+  }
+});
+
 export default router;
+
