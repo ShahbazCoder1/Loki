@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ULPF - Parser Candidate Approval</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0b0f19;
+      --bg-card: #121826;
+      --bg-card-hover: #172033;
+      --bg-inner: #070a10;
+      --border-color: #1e293b;
+      --border-focus: #3b82f6;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-blue-glow: rgba(59, 130, 246, 0.25);
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.2);
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      background-color: rgba(18, 24, 38, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 1rem 2rem;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+      box-shadow: 0 0 16px var(--accent-blue-glow);
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background-color: #2563eb;
+      box-shadow: 0 0 12px var(--accent-blue-glow);
+    }
+
+    .btn-secondary {
+      background-color: #1e293b;
+      color: var(--text-primary);
+      border-color: #334155;
+    }
+
+    .btn-secondary:hover {
+      background-color: #334155;
+    }
+
+    .btn-success {
+      background-color: var(--accent-green);
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      background-color: #059669;
+      box-shadow: 0 0 12px var(--accent-green-glow);
+    }
+
+    .btn-danger {
+      background-color: transparent;
+      color: #f87171;
+      border-color: #7f1d1d;
+    }
+
+    .btn-danger:hover {
+      background-color: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .section-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .alert {
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert-info {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .candidate-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 1.75rem;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.2s ease;
+    }
+
+    .candidate-card:hover {
+      border-color: #334155;
+    }
+
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .candidate-id {
+      font-family: var(--font-mono);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #38bdf8;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-ai {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #c084fc;
+    }
+
+    .badge-count {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+
+    .badge-pass {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .badge-fail {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+
+    .meta-timeline {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 1rem;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 850px) {
+      .card-body {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .info-box {
+      background-color: var(--bg-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .info-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .signature-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      color: #93c5fd;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin: 0.2rem;
+    }
+
+    .fields-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .field-pill {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #334155;
+    }
+
+    .field-pill.req {
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fcd34d;
+    }
+
+    .test-meter {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .test-meter:last-child {
+      border-bottom: none;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .code-preview {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      background-color: var(--bg-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      white-space: pre;
+      color: #cbd5e1;
+      max-height: 180px;
+    }
+
+    .card-footer {
+      padding: 1rem 1.5rem;
+      background: rgba(255, 255, 255, 0.01);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background-color: var(--bg-card);
+      border: 1px dashed var(--border-color);
+      border-radius: 12px;
+    }
+
+    .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      max-width: 480px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .toast {
+      padding: 0.85rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      animation: slideIn 0.25s ease-out;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast-success { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
+    .toast-error { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
+    .toast-info { background: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-logo">U</div>
+        <div>
+          <div class="brand-title">ULPF Intelligence Portal</div>
+          <div class="brand-subtitle">AI-Generated Parser Candidate Approval & Validation</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="refresh-btn" class="btn btn-secondary" onclick="loadCandidates()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Refresh Candidates
+        </button>
+        <button id="generate-btn" class="btn btn-primary" onclick="triggerAIGeneration()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          Trigger AI Analysis
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">Pending Parser Candidates</h1>
+        <p class="section-desc">Review and approve automated parsers generated from clustered quarantine logs before activating in production.</p>
+      </div>
+    </div>
+
+    <div id="status-container"></div>
+    <div id="candidates-list">
+      <!-- Dynamic Candidate Cards -->
+    </div>
+  </main>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script>
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    async function loadCandidates() {
+      const container = document.getElementById("candidates-list");
+      container.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-secondary);">Loading parser candidates...</div>`;
+
+      try {
+        const res = await fetch("/api/intelligence/candidates");
+        if (!res.ok) throw new Error("Failed to fetch candidates");
+        const data = await res.json();
+        const candidates = data.candidates || [];
+
+        if (candidates.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🛡️</div>
+              <div class="empty-title">No Pending Candidates</div>
+              <div class="empty-desc">All unknown logs have been resolved or no new clusters require parser onboarding. Click "Trigger AI Analysis" to inspect current quarantine logs.</div>
+              <button class="btn btn-primary" onclick="triggerAIGeneration()">Trigger AI Analysis</button>
+            </div>
+          `;
+          return;
+        }
+
+        renderCandidates(candidates);
+      } catch (err) {
+        container.innerHTML = `
+          <div class="alert alert-error">
+            <span>Failed to load candidates: ${err.message}</span>
+          </div>
+        `;
+      }
+    }
+
+    function renderCandidates(candidates) {
+      const container = document.getElementById("candidates-list");
+      container.innerHTML = "";
+
+      candidates.forEach(item => {
+        const c = item.candidate || {};
+        const testRes = item.test_results || { positive: { passed: 0, total: 0 }, negative: { correctly_rejected: 0, total: 0 } };
+        const signatures = c.detection?.signatures || [];
+        const rules = c.extraction_rules || [];
+        const required = c.required_fields || [];
+        const samples = c.samples || item.samples || [];
+        const sampleRaw = samples[0] || "Sample log raw data";
+
+        const card = document.createElement("div");
+        card.className = "candidate-card";
+        card.id = `card-${item.candidate_id}`;
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="candidate-id">${c.parser_id || item.candidate_id}</span>
+              <span class="badge badge-ai">✨ ${item.device_family || c.device_family || "AI Suggested"}</span>
+              <span class="badge badge-count">Cluster Size: ${item.cluster_size || 1} Events</span>
+              ${testRes.overall_pass ? '<span class="badge badge-pass">✓ Validated</span>' : '<span class="badge badge-fail">⚠ Needs Review</span>'}
+            </div>
+            <div class="meta-timeline">
+              <span><strong>First Seen:</strong> ${new Date(item.first_seen || Date.now()).toLocaleTimeString()}</span>
+              <span><strong>Last Seen:</strong> ${new Date(item.last_seen || Date.now()).toLocaleTimeString()}</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Signatures & Detection -->
+            <div class="info-box">
+              <div class="info-title">Proposed Signatures</div>
+              <div>
+                ${signatures.map(s => `<span class="signature-tag">"${escapeHtml(s)}"</span>`).join(" ") || '<span style="color:var(--text-muted)">None</span>'}
+              </div>
+              <div style="margin-top: 1rem;" class="info-title">Structure</div>
+              <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary);">
+                ${escapeHtml(c.detection?.structure || "syslog_text")}
+              </div>
+            </div>
+
+            <!-- Validation Test Results -->
+            <div class="info-box">
+              <div class="info-title">Automated Test Results</div>
+              <div class="test-meter">
+                <span>Positive Match (Cluster logs):</span>
+                <strong style="color: var(--accent-green);">${testRes.positive?.passed || 0} / ${testRes.positive?.total || 0} passed</strong>
+              </div>
+              <div class="test-meter">
+                <span>Negative Test (Non-matching logs):</span>
+                <strong style="color: #38bdf8;">${testRes.negative?.correctly_rejected || 0} / ${testRes.negative?.total || 0} correctly rejected</strong>
+              </div>
+              <div class="test-meter">
+                <span>Overall Pass Status:</span>
+                <strong>${testRes.overall_pass ? '<span style="color:var(--accent-green)">PASS</span>' : '<span style="color:var(--accent-amber)">PARTIAL</span>'}</strong>
+              </div>
+            </div>
+
+            <!-- Extraction Fields -->
+            <div class="info-box full-width">
+              <div class="info-title">Proposed Fields & Normalization</div>
+              <div class="fields-list">
+                ${rules.map(r => `
+                  <span class="field-pill ${required.includes(r.field) ? 'req' : ''}">
+                    ${escapeHtml(r.field)} &rarr; ${escapeHtml(c.normalization_mapping?.[r.field] || r.field)}
+                  </span>
+                `).join("")}
+              </div>
+            </div>
+
+            <!-- Sample Input / Output -->
+            <div class="info-box full-width">
+              <div class="info-title">Sample Log &rarr; Parsed Preview</div>
+              <div class="code-preview"><strong>RAW INPUT:</strong>\n${escapeHtml(sampleRaw)}\n\n<strong>PARSED NORMALIZED EXTRACT:</strong>\n${JSON.stringify(c.normalization_mapping || {}, null, 2)}</div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button class="btn btn-danger" onclick="rejectCandidate('${item.candidate_id}')">
+              Reject
+            </button>
+            <button class="btn btn-success" onclick="approveCandidate('${item.candidate_id}')">
+              Approve & Activate
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    async function approveCandidate(candidateId) {
+      try {
+        const res = await fetch("/api/intelligence/approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ candidate_id: candidateId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Approval failed");
+
+        showToast(`Parser '${data.parser_id}' approved & activated! Hot-reload completed.`, "success");
+        const card = document.getElementById(`card-${candidateId}`);
+        if (card) {
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.95)';
+          card.style.transition = 'all 0.3s ease';
+          setTimeout(() => {
+            card.remove();
+            if (document.querySelectorAll(".candidate-card").length === 0) {
+              loadCandidates();
+            }
+          }, 300);
+        }
+      } catch (err) {
+        showToast(`Approval error: ${err.message}`, "error");
+      }
+    }
+
+    async function rejectCandidate(candidateId) {
+      if (!confirm(`Are you sure you want to reject candidate '${candidateId}'?`)) return;
+      try {
+        const res = await fetch("/api/intelligence/reject", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ candidate_id: candidateId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Rejection failed");
+
+        showToast(`Candidate '${candidateId}' rejected.`, "info");
+        const card = document.getElementById(`card-${candidateId}`);
+        if (card) {
+          card.remove();
+          if (document.querySelectorAll(".candidate-card").length === 0) {
+            loadCandidates();
+          }
+        }
+      } catch (err) {
+        showToast(`Rejection error: ${err.message}`, "error");
+      }
+    }
+
+    async function triggerAIGeneration() {
+      const btn = document.getElementById("generate-btn");
+      btn.disabled = true;
+      btn.innerHTML = `Analyzing...`;
+      showToast("Triggering AI analysis of quarantined clusters...", "info");
+
+      try {
+        const res = await fetch("/api/intelligence/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Generation failed");
+
+        showToast("New AI candidate parser generated!", "success");
+        await loadCandidates();
+      } catch (err) {
+        showToast(`Analysis error: ${err.message}`, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Trigger AI Analysis`;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Load on start
+    loadCandidates();
+  </script>
+</body>
+</html>

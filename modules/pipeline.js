@@ -12,7 +12,7 @@ import { normalize } from "./normalizer.js";
 import { validate } from "./schema-validator.js";
 import { assembleCompleteEvent } from "./event-assembler.js";
 import { addProvenance } from "./provenance.js";
-import { analyzeQuarantinedLog } from "./intelligence.js";
+import { analyzeQuarantinedLog, fingerprint } from "./intelligence.js";
 
 /**
  * Process a raw log or existing event envelope through the integrated pipeline:
@@ -59,6 +59,12 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
 
     addProvenance(event, "quarantine", "pipeline", "1.0", "success", { reason });
 
+    const rawPayload = (event.raw && typeof event.raw.immutable_payload === "string")
+      ? event.raw.immutable_payload
+      : typeof rawLogOrEnvelope === "string" ? rawLogOrEnvelope : "";
+
+    event.structural_fingerprint = fingerprint(rawPayload).hash;
+
     if (!options.skipExporter) {
       try {
         await quarantineEvent(event, reason);
@@ -69,10 +75,6 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
 
     // Trigger non-blocking async Gemma AI analysis background task
     if (!options.skipExporter && !options.skipAI) {
-      const rawPayload = (event.raw && typeof event.raw.immutable_payload === "string")
-        ? event.raw.immutable_payload
-        : typeof rawLogOrEnvelope === "string" ? rawLogOrEnvelope : "";
-
       analyzeQuarantinedLog(rawPayload, options)
         .then(aiResult => updateQuarantineAIAnalysis(event.event_id, aiResult))
         .catch(() => {});

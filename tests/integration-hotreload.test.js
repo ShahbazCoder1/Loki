@@ -67,6 +67,8 @@ test("Integration - UNKNOWN Source Handling -> Quarantined State", async () => {
   assert.equal(result.event.processing_status, "QUARANTINED");
   assert.ok(result.event.processing_state_history.includes("QUARANTINED"));
   assert.ok(result.reason.includes("Unknown log format"));
+  assert.ok(result.event.structural_fingerprint, "structural_fingerprint must be generated for UNKNOWN events");
+  assert.equal(result.event.structural_fingerprint.length, 64);
 });
 
 test("Integration - AMBIGUOUS Source Handling -> Quarantined State", async () => {
@@ -91,6 +93,19 @@ test("Integration - AMBIGUOUS Source Handling -> Quarantined State", async () =>
   assert.equal(result.resolution.status, "AMBIGUOUS");
   assert.ok(result.resolution.parserId);
   assert.equal(result.event.processing_status, "QUARANTINED");
+  assert.ok(result.event.structural_fingerprint, "structural_fingerprint must be generated for AMBIGUOUS events");
+  assert.equal(result.event.structural_fingerprint.length, 64);
+});
+
+test("Integration - Quarantined events receive structural_fingerprint before persistence", async () => {
+  const result = await processLogPipeline(UNKNOWN_SAMPLE, { skipExporter: true });
+
+  assert.equal(result.status, "quarantined");
+  assert.ok(result.event.structural_fingerprint, "structural_fingerprint must be present");
+  assert.equal(typeof result.event.structural_fingerprint, "string");
+  assert.equal(result.event.structural_fingerprint.length, 64);
+  assert.ok(result.event.content_fingerprint, "content_fingerprint must remain intact");
+  assert.notEqual(result.event.structural_fingerprint, result.event.content_fingerprint);
 });
 
 test("Hot Reload - Dynamic Detection of Parser File Addition", async () => {
