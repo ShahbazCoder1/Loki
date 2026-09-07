@@ -3,12 +3,57 @@ import {
   clusterQuarantinedEvents,
   generateCandidateParser,
   testCandidate,
-  activateCandidate
+  activateCandidate,
+  analyzeSecurityQuestion
 } from "../modules/intelligence.js";
 
 const router = express.Router();
 
-// 1. POST /api/intelligence/cluster
+// In-memory store for pending candidates
+const pendingCandidates = new Map();
+
+// Helper to ensure candidates exist from available clusters if store is empty
+async function ensureCandidates() {
+  if (pendingCandidates.size > 0) return Array.from(pendingCandidates.values());
+
+  const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
+  for (const cluster of clusters) {
+    try {
+      const candidate = await generateCandidateParser(cluster, { timeout: 2000 });
+      const testRes = testCandidate(candidate, cluster.samples || [], []);
+      const candidateRecord = {
+        candidate_id: candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`,
+        cluster_id: cluster.cluster_id,
+        device_family: candidate.device_family || "Unknown Device",
+        cluster_size: cluster.count || (cluster.samples ? cluster.samples.length : 1),
+        first_seen: cluster.first_seen || new Date().toISOString(),
+        last_seen: cluster.last_seen || new Date().toISOString(),
+        candidate,
+        test_results: testRes,
+        status: "pending"
+      };
+      pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
+    } catch (_) {}
+  }
+  return Array.from(pendingCandidates.values());
+}
+
+// 1. GET /api/intelligence/candidates
+router.get("/candidates", async (_req, res) => {
+  try {
+    const candidates = await ensureCandidates();
+    return res.json({
+      status: "success",
+      total_candidates: candidates.length,
+      candidates
+    });
+  } catch (error) {
+    console.error("Error retrieving candidates:", error);
+    return res.status(500).json({ error: "Failed to retrieve candidates" });
+  }
+});
+
+// 2. POST /api/intelligence/cluster
 router.post("/cluster", (req, res) => {
   try {
     const options = {
@@ -32,10 +77,10 @@ router.post("/cluster", (req, res) => {
   }
 });
 
-// 2. POST /api/intelligence/generate
+// 3. POST /api/intelligence/generate
 router.post("/generate", async (req, res) => {
   try {
-    const { cluster_id, samples, template, options } = req.body;
+    const { cluster_id, samples, template, options } = req.body || {};
 
     let targetCluster = null;
 
@@ -51,7 +96,6 @@ router.post("/generate", async (req, res) => {
     }
 
     if (!targetCluster) {
-      // If nothing specified, pick top cluster from fallback/quarantine
       const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
       if (clusters.length > 0) {
         targetCluster = clusters[0];
@@ -65,11 +109,27 @@ router.post("/generate", async (req, res) => {
     }
 
     const candidate = await generateCandidateParser(targetCluster, options);
+    const testResults = testCandidate(candidate, targetCluster.samples || candidate.samples || [], []);
+
+    const candidateRecord = {
+      candidate_id: candidate.parser_id || `candidate_${targetCluster.cluster_id.substring(0, 8)}`,
+      cluster_id: targetCluster.cluster_id,
+      device_family: candidate.device_family || "Unknown Device",
+      cluster_size: targetCluster.count || (targetCluster.samples ? targetCluster.samples.length : 1),
+      first_seen: targetCluster.first_seen || new Date().toISOString(),
+      last_seen: targetCluster.last_seen || new Date().toISOString(),
+      candidate,
+      test_results: testResults,
+      status: "pending"
+    };
+
+    pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
 
     return res.json({
       status: "generated",
       cluster_id: targetCluster.cluster_id,
-      candidate
+      candidate,
+      candidate_record: candidateRecord
     });
   } catch (error) {
     console.error("Error generating candidate parser:", error);
@@ -77,10 +137,13 @@ router.post("/generate", async (req, res) => {
   }
 });
 
-// 3. POST /api/intelligence/test
+// 4. POST /api/intelligence/test
 router.post("/test", (req, res) => {
   try {
-    const { candidate, positive_samples, negative_samples } = req.body;
+    let { candidate, positive_samples, negative_samples } = req.body;
+    if (candidate && candidate.candidate) {
+      candidate = candidate.candidate;
+    }
 
     if (!candidate || !candidate.detection || !candidate.extraction_rules) {
       return res.status(400).json({
@@ -105,18 +168,36 @@ router.post("/test", (req, res) => {
   }
 });
 
-// 4. POST /api/intelligence/approve
+// 5. POST /api/intelligence/approve
 router.post("/approve", (req, res) => {
   try {
-    const { candidate } = req.body;
+    let { candidate, candidate_id } = req.body || {};
 
-    if (!candidate || !candidate.parser_id || !candidate.extraction_rules) {
+    if (candidate && candidate.candidate) {
+      candidate = candidate.candidate;
+    }
+
+    let targetCandidate = candidate;
+
+    if (!targetCandidate && candidate_id) {
+      const record = pendingCandidates.get(candidate_id);
+      if (record) {
+        targetCandidate = record.candidate;
+      }
+    }
+
+    if (!targetCandidate || !targetCandidate.parser_id || !targetCandidate.extraction_rules) {
       return res.status(400).json({
-        error: "Request body must contain a valid candidate parser object with parser_id"
+        error: "Request body must contain a valid candidate parser object or valid candidate_id"
       });
     }
 
-    const activation = activateCandidate(candidate);
+    const activation = activateCandidate(targetCandidate);
+    if (candidate_id) {
+      pendingCandidates.delete(candidate_id);
+    } else if (targetCandidate.parser_id) {
+      pendingCandidates.delete(targetCandidate.parser_id);
+    }
 
     return res.status(201).json({
       status: "activated",
@@ -130,4 +211,71 @@ router.post("/approve", (req, res) => {
   }
 });
 
+// 6. POST /api/intelligence/reject
+router.post("/reject", (req, res) => {
+  try {
+    const { candidate_id } = req.body || {};
+    if (!candidate_id) {
+      return res.status(400).json({ error: "candidate_id is required for rejection" });
+    }
+
+    pendingCandidates.delete(candidate_id);
+
+    return res.json({
+      status: "rejected",
+      candidate_id,
+      message: `Candidate '${candidate_id}' has been rejected.`
+    });
+  } catch (error) {
+    console.error("Error rejecting candidate:", error);
+    return res.status(500).json({ error: "Failed to reject candidate parser" });
+  }
+});
+
+// 5. POST /api/intelligence/analyze
+router.post("/analyze", async (req, res) => {
+  try {
+    const { question, model, options } = req.body || {};
+
+    if (!question || typeof question !== "string" || !question.trim()) {
+      return res.status(400).json({
+        error: "Question parameter is required and cannot be empty"
+      });
+    }
+
+    const result = await analyzeSecurityQuestion(question, { model, ...options });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("Error analyzing security question:", error.message);
+
+    const isOffline = error.message.includes("Ollama service is not running") || error.message.includes("ECONNREFUSED");
+    const isTimeout = error.message.includes("timed out");
+    const statusCode = isOffline || isTimeout ? 503 : 500;
+
+    return res.status(statusCode).json({
+      error: error.message || "Failed to process question",
+      ollama_status: isOffline ? "offline" : isTimeout ? "timeout" : "error"
+    });
+  }
+});
+
+// 6. GET /api/intelligence/status
+router.get("/status", async (_req, res) => {
+  try {
+    const response = await fetch("http://localhost:11434/api/tags");
+    if (response.ok) {
+      const data = await response.json();
+      return res.json({
+        ollama_status: "online",
+        models: (data.models || []).map(m => m.name)
+      });
+    }
+    return res.json({ ollama_status: "offline", error: "Ollama returned non-200 status" });
+  } catch (_err) {
+    return res.json({ ollama_status: "offline", error: "Ollama service is unreachable at http://localhost:11434" });
+  }
+});
+
 export default router;
+

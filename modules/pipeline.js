@@ -5,12 +5,14 @@ import { getLoadedParsers, getParser } from "./parser-manager.js";
 import {
   quarantineEvent,
   deadLetterEvent,
-  exportEvent
+  exportEvent,
+  updateQuarantineAIAnalysis
 } from "./exporter.js";
 import { normalize } from "./normalizer.js";
 import { validate } from "./schema-validator.js";
 import { assembleCompleteEvent } from "./event-assembler.js";
 import { addProvenance } from "./provenance.js";
+import { analyzeQuarantinedLog, fingerprint } from "./intelligence.js";
 
 /**
  * Process a raw log or existing event envelope through the integrated pipeline:
@@ -57,12 +59,25 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
 
     addProvenance(event, "quarantine", "pipeline", "1.0", "success", { reason });
 
+    const rawPayload = (event.raw && typeof event.raw.immutable_payload === "string")
+      ? event.raw.immutable_payload
+      : typeof rawLogOrEnvelope === "string" ? rawLogOrEnvelope : "";
+
+    event.structural_fingerprint = fingerprint(rawPayload).hash;
+
     if (!options.skipExporter) {
       try {
         await quarantineEvent(event, reason);
       } catch (error) {
         event.persistence_error = error.message;
       }
+    }
+
+    // Trigger non-blocking async Gemma AI analysis background task
+    if (!options.skipExporter && !options.skipAI) {
+      analyzeQuarantinedLog(rawPayload, options)
+        .then(aiResult => updateQuarantineAIAnalysis(event.event_id, aiResult))
+        .catch(() => {});
     }
 
     return {
@@ -73,6 +88,7 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
       event
     };
   }
+
 
   // 4. If RESOLVED, pass parserId and eventEnvelope to Parser Engine
   const parserDef = options.parserDefinition || getParser(resolution.parserId);

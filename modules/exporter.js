@@ -49,4 +49,21 @@ export async function deadLetterEvent(eventEnvelope, error) {
   });
 }
 
+export async function updateQuarantineAIAnalysis(eventId, aiAnalysis) {
+  try {
+    return await client.update({
+      index: "ulpf-quarantine",
+      id: eventId,
+      doc: {
+        ai_analysis: aiAnalysis
+      },
+      refresh: true
+    });
+  } catch (error) {
+    console.error(`Failed to update AI analysis for quarantined event ${eventId}:`, error.message);
+    return null;
+  }
+}
+
 export { client };
+

@@ -519,3 +519,157 @@ export function activateCandidate(candidate, parsersDir) {
     file_path: filePath
   };
 }
+
+/**
+ * 6. Analyze Security Question using Ollama + Gemma Model
+ * @param {string} question - Question about security logs or operational events
+ * @param {Object} [options] - Options (ollamaUrl, model, timeout, context)
+ * @returns {Promise<{ status: string, response: string, model: string }>}
+ */
+export async function analyzeSecurityQuestion(question, options = {}) {
+  if (!question || typeof question !== "string" || !question.trim()) {
+    throw new Error("Question parameter is required and cannot be empty.");
+  }
+
+  const ollamaUrl = options.ollamaUrl || "http://localhost:11434/api/generate";
+  const model = options.model || "gemma4:e2b";
+  const timeoutMs = options.timeout || 120000;
+
+  const systemContext = options.context || "Universal Log Pre-processing Framework (ULPF) Security Operations Center";
+
+  const prompt = `You are an expert Security Operations Center (SOC) AI Assistant analyzing security log events, network traffic, and system anomalies for the ${systemContext}.
+
+USER QUESTION:
+${question.trim()}
+
+Provide a concise, practical, and clear technical analysis or answer. Use clean bullet points and clear sections if applicable.`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(ollamaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        prompt,
+        stream: false
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Ollama API error (${response.status}): ${errText}`);
+    }
+
+    const data = await response.json();
+    return {
+      status: "success",
+      response: (data.response || "").trim(),
+      model,
+      timestamp: new Date().toISOString()
+    };
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error("Request to Ollama timed out. The local Gemma model took too long to respond.");
+    }
+    if (err.code === "ECONNREFUSED" || err.message.includes("fetch failed") || err.message.includes("ECONNREFUSED")) {
+      throw new Error("Ollama service is not running. Please ensure Ollama is started locally on http://localhost:11434.");
+    }
+    throw err;
+  }
+}
+
+/**
+ * 7. Analyze Quarantined / Unknown Log Payload using Ollama + Gemma Model
+ * Returns structured JSON with detected_type, extracted_fields, security_meaning, severity_assessment, suspicious_indicators, recommended_action.
+ * @param {string} rawLog - Raw unparsed log string
+ * @param {Object} [options] - Options (ollamaUrl, model, timeout)
+ * @returns {Promise<Object>} Structured AI Analysis object
+ */
+export async function analyzeQuarantinedLog(rawLog, options = {}) {
+  if (!rawLog || typeof rawLog !== "string") {
+    return {
+      status: "invalid_input",
+      detected_type: "Unknown Payload",
+      severity_assessment: "low",
+      security_meaning: "No valid raw log text provided for analysis.",
+      analyzed_at: new Date().toISOString()
+    };
+  }
+
+  const ollamaUrl = options.ollamaUrl || "http://localhost:11434/api/generate";
+  const model = options.model || "gemma4:e2b";
+  const timeoutMs = options.timeout || 90000;
+
+  const prompt = `Analyze this raw unparsed security log payload and provide a JSON response.
+
+RAW LOG:
+${rawLog}
+
+JSON keys required:
+- "detected_type": "Log/device type (e.g. Linux SSH, Cisco ASA, Nginx Web, Firewall)",
+- "security_meaning": "Concise summary of security meaning",
+- "severity_assessment": "low, medium, high, or critical",
+- "suspicious_indicators": "Suspicious IPs, ports, or anomaly indicators",
+- "recommended_action": "Recommended SOC action"`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(ollamaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        prompt,
+        stream: false,
+        format: "json"
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      let responseText = (data.response || "").trim();
+      const match = responseText.match(/\{[\s\S]*\}/);
+      const jsonStr = match ? match[0] : responseText;
+      const parsed = JSON.parse(jsonStr);
+
+      return {
+        status: "completed",
+        detected_type: parsed.detected_type || "Unknown Security Log",
+        security_meaning: parsed.security_meaning || "Unrecognized security payload",
+        severity_assessment: (parsed.severity_assessment || "medium").toLowerCase(),
+        suspicious_indicators: parsed.suspicious_indicators || "None identified",
+        recommended_action: parsed.recommended_action || "Investigate log payload",
+        extracted_fields: parsed.extracted_fields || {},
+        model,
+        analyzed_at: new Date().toISOString()
+      };
+    }
+  } catch (err) {
+    clearTimeout(timeoutId);
+  }
+
+  return {
+    status: "failed",
+    detected_type: "Unparsed Quarantine Log",
+    extracted_fields: {},
+    security_meaning: "Raw event quarantined pending manual or rule-based inspection",
+    severity_assessment: "medium",
+    suspicious_indicators: "Unrecognized structural format",
+    recommended_action: "Review log payload in quarantine queue",
+    analyzed_at: new Date().toISOString()
+  };
+}
+
+

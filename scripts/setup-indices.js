@@ -35,7 +35,18 @@ async function setupIndices() {
       properties: {
         event_id: { type: "keyword" },
         quarantine_reason: { type: "keyword" },
-        quarantined_at: { type: "date" }
+        quarantined_at: { type: "date" },
+        ai_analysis: {
+          properties: {
+            status: { type: "keyword" },
+            detected_type: { type: "keyword" },
+            severity_assessment: { type: "keyword" },
+            security_meaning: { type: "text" },
+            suspicious_indicators: { type: "text" },
+            recommended_action: { type: "text" },
+            analyzed_at: { type: "date" }
+          }
+        }
       }
     });
 
