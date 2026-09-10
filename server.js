@@ -10,6 +10,7 @@ import { createEventsRouter } from "./routes/events.js";
 import { createQuarantineRouter } from "./routes/quarantine.js";
 import { client } from "./modules/exporter.js";
 import { startWatcher } from "./modules/parser-manager.js";
+import { createStreamRouter } from "./routes/stream.js";
 
 export function createApp({ esClient = client, parsersDir } = {}) {
   const app = express();
@@ -24,7 +25,7 @@ export function createApp({ esClient = client, parsersDir } = {}) {
   app.use("/api/parsers", createParsersRouter({ parsersDir }));
   app.use("/api/events", createEventsRouter({ esClient }));
   app.use("/api/quarantine", createQuarantineRouter({ esClient }));
-
+  app.use("/api/stream", createStreamRouter());
   app.use((_req, res) => res.status(404).json({ error: "Route not found" }));
   app.use((error, _req, res, _next) => {
     if (error?.type === "entity.parse.failed") {
@@ -35,7 +36,7 @@ export function createApp({ esClient = client, parsersDir } = {}) {
     }
     res.status(500).json({ error: "Internal server error", details: error.message });
   });
-
+  
   return app;
 }
 
