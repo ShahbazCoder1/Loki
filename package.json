@@ -16,8 +16,11 @@
   "license": "ISC",
   "dependencies": {
     "@elastic/elasticsearch": "^8.19.2",
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
     "cors": "^2.8.6",
     "crypto-js": "^4.2.0",
+    "eventsource": "^4.1.1",
     "express": "^5.2.1",
     "uuid": "^14.0.2",
     "yaml": "^2.9.0"

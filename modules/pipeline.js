@@ -13,6 +13,7 @@ import { validate } from "./schema-validator.js";
 import { assembleCompleteEvent } from "./event-assembler.js";
 import { addProvenance } from "./provenance.js";
 import { analyzeQuarantinedLog, fingerprint } from "./intelligence.js";
+import bus from "./event-bus.js";
 
 /**
  * Process a raw log or existing event envelope through the integrated pipeline:
@@ -72,12 +73,18 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
         event.persistence_error = error.message;
       }
     }
+    bus.emit("event", {
+      type: "quarantined",
+      event_id: event.event_id,
+      reason,
+      raw_preview: rawPayload
+    });
 
     // Trigger non-blocking async Gemma AI analysis background task
     if (!options.skipExporter && !options.skipAI) {
       analyzeQuarantinedLog(rawPayload, options)
         .then(aiResult => updateQuarantineAIAnalysis(event.event_id, aiResult))
-        .catch(() => {});
+        .catch(() => { });
     }
 
     return {
@@ -135,6 +142,11 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
         event.persistence_error = error.message;
       }
     }
+    bus.emit("event", {
+      type: "dead-letter",
+      event_id: event.event_id,
+      error: parseResult.errors
+    });
 
     return {
       status: "dead-letter",
@@ -185,6 +197,11 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
         event.persistence_error = error.message;
       }
     }
+    bus.emit("event", {
+      type: "dead-letter",
+      event_id: event.event_id,
+      error: schemaCheck.errors
+    });
 
     return {
       status: "dead-letter",
@@ -220,6 +237,12 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
       completeEvent.persistence_error = error.message;
     }
   }
+  bus.emit("event", {
+    type: "exported",
+    event_id: event.event_id,
+    source: resolution.parserId,
+    normalized: completeEvent.normalized
+  });
 
   return {
     status: "exported",
