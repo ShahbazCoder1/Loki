@@ -104,6 +104,11 @@ const statusChart = grid.set(7, 0, 4, 6, contrib.donut, {
         fg: "magenta",
     },
 
+    /*
+     * Keep the donut itself clean.
+     * The labels are rendered by a child box below
+     * inside the SAME panel.
+     */
     data: [
         {
             label: "Exported",
@@ -120,6 +125,24 @@ const statusChart = grid.set(7, 0, 4, 6, contrib.donut, {
     ],
 });
 
+const statusLabels = blessed.text({
+    parent: statusChart,
+
+    bottom: 0,
+    left: 0,
+
+    width: "100%",
+    height: 1,
+
+    tags: true,
+
+    align: "center",
+    valign: "middle",
+
+    style: {
+        fg: "white",
+    },
+});
 /*
  * blessed-contrib's donut renders the percentages nicely,
  * but its data labels are not reliably visible depending on
@@ -127,21 +150,7 @@ const statusChart = grid.set(7, 0, 4, 6, contrib.donut, {
  *
  * So we add an explicit legend directly underneath it.
  */
-const statusLabels = grid.set(10, 0, 1, 6, blessed.box, {
-    tags: true,
 
-    align: "center",
-    valign: "middle",
-
-    border: {
-        type: "line",
-        fg: "magenta",
-    },
-
-    style: {
-        fg: "white",
-    },
-});
 
 const systemInfo = grid.set(7, 6, 4, 6, blessed.box, {
     label: " ULPF System ",
@@ -340,14 +349,6 @@ function updatePanelFocus() {
             panel.widget.setLabel(label);
         }
     });
-
-    /*
-     * Status legend follows the status panel focus.
-     */
-    statusLabels.options.border.fg =
-        focusedPanel === 3
-            ? "white"
-            : "magenta";
 }
 
 function moveFocus(direction) {
