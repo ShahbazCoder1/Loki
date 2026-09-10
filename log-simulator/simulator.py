@@ -28,7 +28,7 @@ import urllib.error
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-API_URL = os.environ.get("ULPF_API_URL", "http://127.0.0.1:3000/api/logs")
+API_URL = os.environ.get("ULPF_API_URL", "http://192.168.1.10:3000/api/logs")
 
 # Terminal Color Codes
 class Colors:
