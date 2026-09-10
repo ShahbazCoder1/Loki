@@ -29,7 +29,7 @@ const screen = blessed.screen({
  */
 
 const FOOTER_ROWS = 1;
-const GRID_ROWS = 12;
+const GRID_ROWS = 11;
 
 const grid = new contrib.grid({
     rows: GRID_ROWS,
@@ -164,7 +164,13 @@ const systemInfo = grid.set(7, 6, 4, 6, blessed.box, {
 /*                                  FOOTER                                    */
 /* -------------------------------------------------------------------------- */
 
-const footer = grid.set(11, 0, FOOTER_ROWS, 12, blessed.box, {
+const footer = blessed.box({
+    bottom: 0,
+    left: 0,
+
+    width: "100%",
+    height: 3,
+
     tags: true,
 
     align: "center",
@@ -178,6 +184,9 @@ const footer = grid.set(11, 0, FOOTER_ROWS, 12, blessed.box, {
     style: {
         fg: "white",
     },
+
+    content:
+        "↑↓←→ Navigate   x Expand   Esc Back   r Reset   q Quit",
 });
 
 const FOOTER_TEXT_NORMAL =
@@ -484,9 +493,9 @@ function getSourceLabel(source) {
         typeof source === "string"
             ? source
             : source.type ||
-              source.parser_id ||
-              source.parserId ||
-              "Unknown";
+            source.parser_id ||
+            source.parserId ||
+            "Unknown";
 
     switch (value) {
         case "fortinet_v1.0":
@@ -658,7 +667,7 @@ const expandedContainer = blessed.box({
     left: 0,
 
     width: "100%",
-    height: "100%-1",
+    height: "100%-3",
 
     border: {
         type: "line",
@@ -675,6 +684,7 @@ const expandedContainer = blessed.box({
 screen.append(
     expandedContainer
 );
+screen.append(footer);
 
 const expandedWidgets = {};
 
@@ -931,7 +941,7 @@ function setActiveExpandedWidget(name) {
             if (
                 !widget ||
                 typeof widget.show !==
-                    "function"
+                "function"
             ) {
                 return;
             }
@@ -956,9 +966,9 @@ function setActiveExpandedWidget(name) {
             if (name === "status") {
                 shouldShow =
                     key ===
-                        "statusDonut" ||
+                    "statusDonut" ||
                     key ===
-                        "statusSummary";
+                    "statusSummary";
             }
 
             if (name === "system") {
@@ -989,7 +999,7 @@ function updateExpandedEvents() {
     ) {
         const event =
             recentEvents[
-                expandedEventsRendered
+            expandedEventsRendered
             ];
 
         widget.log(
@@ -1355,7 +1365,7 @@ function scrollExpandedContent(
     if (
         widget &&
         typeof widget.scroll ===
-            "function"
+        "function"
     ) {
         widget.scroll(
             direction * 2
@@ -1637,8 +1647,8 @@ async function loadHistoricalQuarantine() {
             Array.isArray(data)
                 ? data
                 : data.events ||
-                  data.items ||
-                  [];
+                data.items ||
+                [];
 
         events.forEach(
             (event) => {
