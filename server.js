@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { fileURLToPath } from "url";
 
 import logsRouter from "./routes/logs.js";
@@ -24,6 +25,10 @@ export function createApp({ esClient = client, parsersDir } = {}) {
   app.use("/api/parsers", createParsersRouter({ parsersDir }));
   app.use("/api/events", createEventsRouter({ esClient }));
   app.use("/api/quarantine", createQuarantineRouter({ esClient }));
+
+  app.get("/trace/:event_id", (_req, res) => {
+    res.sendFile(path.resolve("public/trace.html"));
+  });
 
   app.use((_req, res) => res.status(404).json({ error: "Route not found" }));
   app.use((error, _req, res, _next) => {
