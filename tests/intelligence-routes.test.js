@@ -100,6 +100,10 @@ test("Intelligence Routes - POST /api/intelligence/generate, /test, and /approve
     assert.equal(genData.status, "generated");
     assert.ok(genData.candidate);
 
+    assert.ok(genData.candidate_record);
+    assert.ok(genData.candidate_record.approve_url);
+    assert.ok(genData.candidate_record.reject_url);
+
     const candidate = genData.candidate;
 
     // 2. Test candidate
@@ -166,3 +170,41 @@ test("Intelligence Routes - POST /api/intelligence/generate returns 503 when Oll
     server.close();
   }
 });
+
+test("Intelligence Routes - GET /api/intelligence/candidates and /candidates/:candidate_id", async () => {
+  const app = createTestApp();
+  const server = app.listen(0);
+  const port = server.address().port;
+
+  try {
+    const resList = await fetch(`http://127.0.0.1:${port}/api/intelligence/candidates`);
+    assert.equal(resList.status, 200);
+    const listData = await resList.json();
+    assert.equal(listData.status, "success");
+    assert.ok(Array.isArray(listData.candidates));
+    assert.ok(listData.candidates.length > 0);
+
+    const firstCandidate = listData.candidates[0];
+    assert.ok(firstCandidate.candidate_id);
+    assert.ok(firstCandidate.approve_url.includes(`/approve/${firstCandidate.candidate_id}`));
+    assert.ok(firstCandidate.reject_url.includes(`/reject/${firstCandidate.candidate_id}`));
+
+    // Fetch single existing candidate
+    const resSingle = await fetch(`http://127.0.0.1:${port}/api/intelligence/candidates/${firstCandidate.candidate_id}`);
+    assert.equal(resSingle.status, 200);
+    const singleData = await resSingle.json();
+    assert.equal(singleData.status, "success");
+    assert.equal(singleData.candidate.candidate_id, firstCandidate.candidate_id);
+    assert.ok(singleData.candidate.candidate);
+    assert.ok(singleData.candidate.test_results);
+
+    // Fetch non-existing candidate
+    const res404 = await fetch(`http://127.0.0.1:${port}/api/intelligence/candidates/non_existent_candidate_12345`);
+    assert.equal(res404.status, 404);
+    const data404 = await res404.json();
+    assert.equal(data404.error, "Candidate not found");
+  } finally {
+    server.close();
+  }
+});
+
