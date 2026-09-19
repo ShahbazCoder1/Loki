@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ULPF Parser Action</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #212121;
+      --bg-surface: #171717;
+      --bg-surface-secondary: #1f1f1f;
+      --bg-surface-hover: #2a2a2a;
+      --bg-code: #141414;
+      --border-subtle: #303030;
+      --border-muted: #3a3a3a;
+      --text-primary: #ececec;
+      --text-secondary: #b4b4b4;
+      --text-muted: #8a8a8a;
+      --status-success-bg: #1e2922;
+      --status-success-border: #2e4436;
+      --status-success-text: #6edc8c;
+      --status-fail-bg: #2d1e1e;
+      --status-fail-border: #4a2e2e;
+      --status-fail-text: #f08c8c;
+      --status-partial-bg: #2a261a;
+      --status-partial-border: #443c24;
+      --status-partial-text: #e6c875;
+      --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 0.85rem 2rem;
+    }
+
+    .nav-container {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--bg-surface-secondary);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.75rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .card-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .card-footer {
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+      background-color: var(--bg-surface-secondary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    /* Badges & Action Indicators */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      font-family: var(--font-mono);
+    }
+
+    .badge-approve {
+      background: var(--status-success-bg);
+      border: 1px solid var(--status-success-border);
+      color: var(--status-success-text);
+    }
+
+    .badge-reject {
+      background: var(--status-fail-bg);
+      border: 1px solid var(--status-fail-border);
+      color: var(--status-fail-text);
+    }
+
+    .badge-neutral {
+      background: var(--bg-surface-secondary);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    /* Grid & Key-Value pairs */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .info-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .info-value {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      word-break: break-all;
+    }
+
+    /* Test Scorecard */
+    .test-scorecard {
+      background-color: var(--bg-surface-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .scorecard-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.83rem;
+      border-bottom: 1px solid #282828;
+      padding-bottom: 0.45rem;
+    }
+
+    .scorecard-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    /* Code Display */
+    .code-box {
+      background-color: var(--bg-code);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+      max-height: 280px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid var(--border-muted);
+      text-decoration: none;
+      user-select: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-surface-secondary);
+      color: var(--text-secondary);
+      border-color: var(--border-muted);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background-color: var(--bg-surface-hover);
+      color: var(--text-primary);
+    }
+
+    .btn-confirm-approve {
+      background-color: #2a2a2a;
+      color: var(--text-primary);
+      border: 1px solid var(--border-muted);
+    }
+
+    .btn-confirm-approve:hover:not(:disabled) {
+      background-color: #232d26;
+      border-color: #354a39;
+      color: #6edc8c;
+    }
+
+    .btn-confirm-reject {
+      background-color: #242424;
+      color: var(--text-primary);
+      border: 1px solid var(--border-muted);
+    }
+
+    .btn-confirm-reject:hover:not(:disabled) {
+      background-color: #2c2223;
+      border-color: #4a3335;
+      color: #f08c8c;
+    }
+
+    /* Alert / Result Banners */
+    .alert {
+      padding: 0.85rem 1.15rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .alert-success {
+      background: var(--status-success-bg);
+      border: 1px solid var(--status-success-border);
+      color: var(--status-success-text);
+    }
+
+    .alert-error {
+      background: var(--status-fail-bg);
+      border: 1px solid var(--status-fail-border);
+      color: var(--status-fail-text);
+    }
+
+    .alert-info {
+      background: var(--bg-surface-secondary);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    /* States */
+    .state-container {
+      text-align: center;
+      padding: 3.5rem 2rem;
+    }
+
+    .state-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .state-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      max-width: 480px;
+      margin: 0 auto 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-logo">U</div>
+        <div>
+          <div class="brand-subtitle">ULPF / Intelligence Action</div>
+          <div class="brand-title">ULPF Parser Action</div>
+        </div>
+      </div>
+      <div>
+        <a href="/" class="btn btn-secondary">
+          &larr; Home
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="app-main">
+    <div class="card state-container" id="loading-state">
+      <div class="state-title">Loading Candidate Details...</div>
+      <div class="state-desc" id="loading-desc">Fetching parser candidate record from ULPF intelligence backend...</div>
+    </div>
+  </main>
+
+  <script>
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // 1. Determine action and candidate_id from URL
+    function getParamsFromUrl() {
+      const pathname = window.location.pathname;
+      const parts = pathname.split("/").filter(Boolean);
+      let action = null;
+      let candidateId = null;
+
+      if (parts.length >= 2) {
+        const first = parts[0].toLowerCase();
+        if (first === "approve" || first === "reject") {
+          action = first;
+          candidateId = decodeURIComponent(parts[1]);
+        }
+      }
+
+      const searchParams = new URLSearchParams(window.location.search);
+      if (!action && searchParams.has("action")) {
+        action = searchParams.get("action").toLowerCase();
+      }
+      if (!candidateId && searchParams.has("candidate_id")) {
+        candidateId = searchParams.get("candidate_id");
+      }
+      if (!candidateId && searchParams.has("id")) {
+        candidateId = searchParams.get("id");
+      }
+
+      return {
+        action: action === "approve" || action === "reject" ? action : null,
+        candidateId: candidateId || null
+      };
+    }
+
+    // Helper to format candidate parser object into YAML-like text block
+    function formatCandidateYaml(c) {
+      if (!c) return "No candidate definition available";
+      if (typeof c.yaml === "string" && c.yaml.trim()) return c.yaml;
+
+      const lines = [];
+      if (c.parser_id) lines.push(`parser_id: "${c.parser_id}"`);
+      if (c.version) lines.push(`version: "${c.version}"`);
+      if (c.device_family) lines.push(`device_family: "${c.device_family}"`);
+      
+      if (c.detection) {
+        lines.push(`detection:`);
+        if (c.detection.structure) lines.push(`  structure: "${c.detection.structure}"`);
+        if (Array.isArray(c.detection.signatures) && c.detection.signatures.length > 0) {
+          lines.push(`  signatures:`);
+          c.detection.signatures.forEach(s => lines.push(`    - "${String(s).replace(/"/g, '\\"')}"`));
+        }
+      }
+
+      if (Array.isArray(c.extraction_rules) && c.extraction_rules.length > 0) {
+        lines.push(`extraction_rules:`);
+        c.extraction_rules.forEach(r => {
+          lines.push(`  - field: "${r.field || ''}"`);
+          lines.push(`    regex: "${(r.regex || '').replace(/"/g, '\\"')}"`);
+        });
+      }
+
+      if (c.normalization_mapping && typeof c.normalization_mapping === "object") {
+        lines.push(`normalization_mapping:`);
+        for (const [k, v] of Object.entries(c.normalization_mapping)) {
+          lines.push(`  ${k}: "${v}"`);
+        }
+      }
+
+      if (Array.isArray(c.required_fields) && c.required_fields.length > 0) {
+        lines.push(`required_fields:`);
+        c.required_fields.forEach(rf => lines.push(`  - "${rf}"`));
+      }
+
+      return lines.length > 0 ? lines.join("\n") : JSON.stringify(c, null, 2);
+    }
+
+    let pageAction = null;
+    let pageCandidateId = null;
+
+    async function initPage() {
+      const main = document.getElementById("app-main");
+      const { action, candidateId } = getParamsFromUrl();
+
+      pageAction = action;
+      pageCandidateId = candidateId;
+
+      if (!candidateId) {
+        main.innerHTML = `
+          <div class="card state-container">
+            <div class="state-title" style="color:var(--status-fail-text);">Invalid Request</div>
+            <div class="state-desc">No candidate_id specified in the URL.</div>
+            <a href="/" class="btn btn-secondary">Return to Application</a>
+          </div>
+        `;
+        return;
+      }
+
+      if (!action) {
+        main.innerHTML = `
+          <div class="card state-container">
+            <div class="state-title" style="color:var(--status-fail-text);">Unknown Action</div>
+            <div class="state-desc">URL must specify whether to approve or reject candidate '${escapeHtml(candidateId)}'.</div>
+            <a href="/" class="btn btn-secondary">Return to Application</a>
+          </div>
+        `;
+        return;
+      }
+
+      // 2. Fetch candidate details
+      try {
+        const res = await fetch(`/api/intelligence/candidates/${encodeURIComponent(candidateId)}`);
+        
+        if (res.status === 404) {
+          main.innerHTML = `
+            <div class="card state-container">
+              <div class="state-title" style="color:var(--status-fail-text);">Candidate Not Found</div>
+              <div class="state-desc">No candidate parser record exists with ID '${escapeHtml(candidateId)}'. It may have already been activated or rejected.</div>
+              <a href="/" class="btn btn-secondary">Return to Application</a>
+            </div>
+          `;
+          return;
+        }
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `Server responded with HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const record = data.candidate || data;
+        renderActionPage(record, action);
+      } catch (err) {
+        main.innerHTML = `
+          <div class="card state-container">
+            <div class="state-title" style="color:var(--status-fail-text);">Error Loading Candidate</div>
+            <div class="state-desc">Failed to fetch details for candidate '${escapeHtml(candidateId)}': ${escapeHtml(err.message)}</div>
+            <button class="btn btn-secondary" onclick="initPage()">Retry</button>
+          </div>
+        `;
+      }
+    }
+
+    // 3. Render candidate info and confirmation form
+    function renderActionPage(item, action) {
+      const main = document.getElementById("app-main");
+      const c = item.candidate || {};
+      const testRes = item.test_results || { positive: { passed: 0, total: 0 }, negative: { correctly_rejected: 0, total: 0 } };
+      
+      const candidateId = item.candidate_id || c.parser_id || pageCandidateId;
+      const parserId = c.parser_id || candidateId;
+      const deviceFamily = item.device_family || c.device_family || "Unknown Device";
+      const clusterId = item.cluster_id || "N/A";
+      const clusterSize = item.cluster_size !== undefined ? item.cluster_size : 1;
+      const statusStr = item.status || "pending";
+
+      const isApprove = action === "approve";
+      const badgeClass = isApprove ? "badge-approve" : "badge-reject";
+      const actionText = isApprove ? "Approve" : "Reject";
+      const btnClass = isApprove ? "btn-confirm-approve" : "btn-confirm-reject";
+      const btnText = isApprove ? "Confirm Approve" : "Confirm Reject";
+
+      const yamlString = formatCandidateYaml(c);
+
+      main.innerHTML = `
+        <div id="result-banner"></div>
+
+        <section class="card">
+          <div class="card-header">
+            <span class="card-title">Candidate Parser Confirmation</span>
+            <span class="badge ${badgeClass}">Action: ${actionText}</span>
+          </div>
+
+          <div class="card-body">
+            <!-- Basic Candidate Meta -->
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Candidate ID</span>
+                <span class="info-value">${escapeHtml(candidateId)}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Parser ID</span>
+                <span class="info-value">${escapeHtml(parserId)}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Device Family</span>
+                <span class="info-value">${escapeHtml(deviceFamily)}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Cluster ID</span>
+                <span class="info-value">${escapeHtml(clusterId)}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Cluster Size</span>
+                <span class="info-value">${escapeHtml(clusterSize)} Event${clusterSize === 1 ? '' : 's'}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Status</span>
+                <span class="info-value"><span class="badge badge-neutral">${escapeHtml(statusStr)}</span></span>
+              </div>
+            </div>
+
+            <!-- Test Results Scorecard -->
+            <div class="test-scorecard">
+              <div class="info-label" style="margin-bottom:0.2rem;">Test Scorecard</div>
+              <div class="scorecard-row">
+                <span style="color:var(--text-secondary)">Positive Pass Count:</span>
+                <strong style="font-family:var(--font-mono); color:var(--text-primary);">
+                  ${testRes.positive?.passed || 0} / ${testRes.positive?.total || 0}
+                </strong>
+              </div>
+              <div class="scorecard-row">
+                <span style="color:var(--text-secondary)">Negative Pass Count:</span>
+                <strong style="font-family:var(--font-mono); color:var(--text-primary);">
+                  ${testRes.negative?.correctly_rejected || 0} / ${testRes.negative?.total || 0}
+                </strong>
+              </div>
+              <div class="scorecard-row">
+                <span style="color:var(--text-secondary)">Overall Pass Status:</span>
+                <strong class="badge ${testRes.overall_pass ? 'badge-approve' : 'badge-neutral'}">
+                  ${testRes.overall_pass ? 'PASS' : 'PARTIAL / NEEDS REVIEW'}
+                </strong>
+              </div>
+            </div>
+
+            <!-- Parser Definition YAML -->
+            <div style="display:flex; flex-direction:column; gap:0.4rem;">
+              <span class="info-label">Parser Definition (YAML)</span>
+              <pre class="code-box">${escapeHtml(yamlString)}</pre>
+            </div>
+          </div>
+
+          <!-- Card Footer Action Controls -->
+          <div class="card-footer">
+            <a href="/" class="btn btn-secondary">Cancel</a>
+            <button id="action-btn" class="btn ${btnClass}" onclick="executeAction('${escapeHtml(candidateId)}', '${action}')">
+              ${btnText}
+            </button>
+          </div>
+        </section>
+      `;
+    }
+
+    // 4. Confirmation action handler
+    async function executeAction(candidateId, action) {
+      const btn = document.getElementById("action-btn");
+      const banner = document.getElementById("result-banner");
+
+      if (!btn || btn.disabled) return;
+
+      btn.disabled = true;
+      btn.textContent = "Processing...";
+
+      const isApprove = action === "approve";
+      const endpoint = isApprove ? "/api/intelligence/approve" : "/api/intelligence/reject";
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ candidate_id: candidateId })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.error || `Request failed with status ${res.status}`);
+        }
+
+        // Success state
+        if (isApprove) {
+          btn.textContent = "Approved & Activated";
+          banner.innerHTML = `
+            <div class="alert alert-success" style="margin-bottom:1.25rem;">
+              <span>Parser '<strong>${escapeHtml(data.parser_id || candidateId)}</strong>' has been approved and activated! Hot-reload completed.</span>
+            </div>
+          `;
+        } else {
+          btn.textContent = "Rejected";
+          banner.innerHTML = `
+            <div class="alert alert-info" style="margin-bottom:1.25rem;">
+              <span>Candidate '<strong>${escapeHtml(candidateId)}</strong>' has been rejected and removed from pending queue.</span>
+            </div>
+          `;
+        }
+      } catch (err) {
+        // Error state: re-enable button for retry
+        btn.disabled = false;
+        btn.textContent = isApprove ? "Confirm Approve" : "Confirm Reject";
+        banner.innerHTML = `
+          <div class="alert alert-error" style="margin-bottom:1.25rem;">
+            <span>Failed to ${action} candidate: ${escapeHtml(err.message)}</span>
+          </div>
+        `;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", initPage);
+  </script>
+</body>
+</html>

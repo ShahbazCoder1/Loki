@@ -232,6 +232,22 @@ test("GET /trace/:event_id returns public/trace.html", async () => {
   assert.ok(html.includes("<title>ULPF Event Trace</title>"));
 });
 
+test("GET /approve/:candidate_id returns public/parser-action.html", async () => {
+  const response = await fetch(`${baseUrl}/approve/candidate-123`);
+  assert.equal(response.status, 200);
+  assert.ok(response.headers.get("content-type")?.includes("text/html"));
+  const html = await response.text();
+  assert.ok(html.includes("<title>ULPF Parser Action</title>"));
+});
+
+test("GET /reject/:candidate_id returns public/parser-action.html", async () => {
+  const response = await fetch(`${baseUrl}/reject/candidate-123`);
+  assert.equal(response.status, 200);
+  assert.ok(response.headers.get("content-type")?.includes("text/html"));
+  const html = await response.text();
+  assert.ok(html.includes("<title>ULPF Parser Action</title>"));
+});
+
 test("POST /api/logs validates input and returns clean JSON errors", async () => {
   const response = await fetch(`${baseUrl}/api/logs`, {
     method: "POST",
