@@ -101,6 +101,31 @@ export function createEventsRouter({ esClient = client } = {}) {
     }
   });
 
+  router.get("/:event_id/full", async (req, res) => {
+    try {
+      const response = await esClient.get({
+        index: "ulpf-events",
+        id: req.params.event_id
+      });
+      const event = sourceFromGetResponse(response);
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      return res.json(event);
+    } catch (error) {
+      if (error?.meta?.statusCode === 404 || error?.statusCode === 404) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      return res.status(503).json({
+        error: "Elasticsearch is unavailable",
+        details: error.message
+      });
+    }
+  });
+
   return router;
 }
 

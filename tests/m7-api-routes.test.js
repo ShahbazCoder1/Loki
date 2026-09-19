@@ -224,6 +224,14 @@ test("unknown API routes return JSON 404 responses", async () => {
   assert.deepEqual(await response.json(), { error: "Route not found" });
 });
 
+test("GET /trace/:event_id returns public/trace.html", async () => {
+  const response = await fetch(`${baseUrl}/trace/event-123`);
+  assert.equal(response.status, 200);
+  assert.ok(response.headers.get("content-type")?.includes("text/html"));
+  const html = await response.text();
+  assert.ok(html.includes("<title>ULPF Event Trace</title>"));
+});
+
 test("POST /api/logs validates input and returns clean JSON errors", async () => {
   const response = await fetch(`${baseUrl}/api/logs`, {
     method: "POST",
