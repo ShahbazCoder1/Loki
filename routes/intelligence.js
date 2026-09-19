@@ -33,7 +33,9 @@ async function ensureCandidates() {
         status: "pending"
       };
       pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
-    } catch (_) {}
+    } catch (error) {
+      console.warn(`[Intelligence] Failed to generate candidate for cluster ${cluster.cluster_id}:`, error.message);
+    }
   }
   return Array.from(pendingCandidates.values());
 }
@@ -132,8 +134,12 @@ router.post("/generate", async (req, res) => {
       candidate_record: candidateRecord
     });
   } catch (error) {
-    console.error("Error generating candidate parser:", error);
-    return res.status(500).json({ error: "Failed to generate candidate parser" });
+    console.error("Error generating candidate parser:", error.message);
+    const statusCode = (error.ollama_status === "offline" || error.ollama_status === "timeout") ? 503 : 500;
+    return res.status(statusCode).json({
+      error: error.message || "Failed to generate candidate parser",
+      ollama_status: error.ollama_status || "error"
+    });
   }
 });
 

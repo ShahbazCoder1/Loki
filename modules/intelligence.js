@@ -156,111 +156,11 @@ export function clusterQuarantinedEvents(options = {}) {
 }
 
 /**
- * Helper to generate smart fallback parser when Ollama is unavailable
- */
-function generateFallbackParser(cluster) {
-  const sample = (cluster.samples && cluster.samples[0]) || cluster.template || "";
-  
-  let parserId = "custom_device";
-  let deviceFamily = "Generic Network Device";
-  let structure = "syslog_text";
-  const signatures = [];
-  const extractionRules = [];
-  const requiredFields = [];
-  const normalizationMapping = {};
-
-  // Detect signature from known patterns in sample
-  if (sample.includes("filterlog")) {
-    parserId = "pfsense_filterlog";
-    deviceFamily = "pfSense";
-    structure = "csv";
-    signatures.push("filterlog");
-    extractionRules.push(
-      { field: "src_ip", regex: "(?:\\d+,){19}(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" },
-      { field: "dst_ip", regex: "(?:\\d+,){20}(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" },
-      { field: "action", regex: "(?:pass|block|match,block|match,pass)" }
-    );
-    requiredFields.push("src_ip", "action");
-    normalizationMapping.src_ip = "src_endpoint.ip";
-    normalizationMapping.dst_ip = "dst_endpoint.ip";
-    normalizationMapping.action = "action";
-  } else if (sample.includes("RT_FLOW")) {
-    parserId = "juniper_srx";
-    deviceFamily = "Juniper SRX";
-    structure = "syslog_text";
-    signatures.push("RT_FLOW:");
-    extractionRules.push(
-      { field: "event_type", regex: "(RT_FLOW_SESSION_[A-Z_]+)" },
-      { field: "src_ip", regex: "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})/\\d+->" },
-      { field: "src_port", regex: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/(\\d+)->" },
-      { field: "dst_ip", regex: "->(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})/\\d+" },
-      { field: "dst_port", regex: "->\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/(\\d+)" }
-    );
-    requiredFields.push("src_ip", "dst_ip", "event_type");
-    normalizationMapping.src_ip = "src_endpoint.ip";
-    normalizationMapping.dst_ip = "dst_endpoint.ip";
-    normalizationMapping.src_port = "src_endpoint.port";
-    normalizationMapping.dst_port = "dst_endpoint.port";
-    normalizationMapping.event_type = "event_type";
-  } else if (sample.includes("sshd[")) {
-    parserId = "linux_sshd";
-    deviceFamily = "Linux SSH";
-    structure = "syslog_text";
-    signatures.push("sshd[");
-    extractionRules.push(
-      { field: "action", regex: "\\b(Failed|Accepted)\\s+password" },
-      { field: "user", regex: "for\\s+(?:invalid\\s+user\\s+)?([\\w.-]+)\\s+from" },
-      { field: "src_ip", regex: "from\\s+(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" },
-      { field: "src_port", regex: "port\\s+(\\d+)" }
-    );
-    requiredFields.push("src_ip", "action");
-    normalizationMapping.src_ip = "src_endpoint.ip";
-    normalizationMapping.src_port = "src_endpoint.port";
-    normalizationMapping.action = "action";
-  } else {
-    // Generic auto-extractor from sample
-    const words = sample.split(/\s+/);
-    const candidateSig = words.find(w => w.length > 4 && /^[a-zA-Z0-9_-]+[:[]?$/.test(w)) || words[0] || "LOG_EVENT";
-    signatures.push(candidateSig.replace(/[:[\]]/g, ""));
-    
-    // IP extractors
-    if (/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(sample)) {
-      extractionRules.push({ field: "src_ip", regex: "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" });
-      requiredFields.push("src_ip");
-      normalizationMapping.src_ip = "src_endpoint.ip";
-    }
-    
-    // Action extractors
-    if (/(allow|block|drop|deny|accept|reject|pass)/i.test(sample)) {
-      extractionRules.push({ field: "action", regex: "\\b(allow|block|drop|deny|accept|reject|pass)\\b" });
-      requiredFields.push("action");
-      normalizationMapping.action = "action";
-    }
-  }
-
-  return {
-    parser_id: parserId + "_v1.0",
-    version: "1.0",
-    device_family: deviceFamily,
-    description: `Auto-generated parser for ${deviceFamily}`,
-    detection: {
-      signatures,
-      structure,
-      keywords: signatures
-    },
-    extraction_rules: extractionRules,
-    required_fields: requiredFields,
-    normalization_mapping: normalizationMapping,
-    is_generated: true,
-    generated_at: new Date().toISOString()
-  };
-}
-
-/**
- * 3. Generate candidate parser from cluster samples using Ollama or fallback
+ * 3. Generate candidate parser from cluster samples using Ollama AI
  * @param {Object} cluster - Cluster object with samples and template
- * @param {Object} [options] - Options (ollamaUrl, model)
- * @returns {Promise<Object>} Generated candidate parser
+ * @param {Object} [options] - Options (ollamaUrl, model, timeout)
+ * @returns {Promise<Object>} Generated candidate parser object
+ * @throws {Error} Error with `ollama_status` ("offline" | "timeout" | "error" | "invalid_response" | "invalid_schema" | "test_failed")
  */
 export async function generateCandidateParser(cluster, options = {}) {
   const ollamaUrl = options.ollamaUrl || "http://localhost:11434/api/generate";
@@ -321,12 +221,13 @@ CRITICAL RULES:
 - MANDATORY: The regex for EVERY rule in extraction_rules MUST place parentheses () around the captured value (e.g. "<\\\\d+>(\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}Z)" for timestamp). Without () parentheses, field extraction will fail!
 - Return ONLY valid JSON. No markdown formatting, no code fences, no extra text.`;
 
-  try {
-    const controller = new AbortController();
-    const timeoutMs = options.timeout || 30000;
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const controller = new AbortController();
+  const timeoutMs = options.timeout || 30000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    const response = await fetch(ollamaUrl, {
+  let response;
+  try {
+    response = await fetch(ollamaUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -337,38 +238,82 @@ CRITICAL RULES:
       }),
       signal: controller.signal
     });
-
-    clearTimeout(timeoutId);
-
-    if (response.ok) {
-      const data = await response.json();
-      let responseText = data.response;
-      // Strip markdown fences if present
-      responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-      const parsedCandidate = JSON.parse(responseText);
-
-      // Validate core properties and ensure extraction rules are valid JavaScript regexes
-      if (parsedCandidate && parsedCandidate.detection && Array.isArray(parsedCandidate.extraction_rules)) {
-        if (!parsedCandidate.parser_id) parsedCandidate.parser_id = "ai_candidate_v1.0";
-        if (!parsedCandidate.version) parsedCandidate.version = "1.0";
-        parsedCandidate.source = "ollama_" + model;
-        parsedCandidate.is_generated = true;
-        parsedCandidate.generated_at = new Date().toISOString();
-
-        const testRes = testCandidate(parsedCandidate, samples, []);
-        if (testRes.positive.passed > 0) {
-          return parsedCandidate;
-        }
-      }
-    }
   } catch (err) {
-    // Ollama unreachable or timed out -> use smart fallback
+    if (err.name === "AbortError") {
+      const abortErr = new Error(`Ollama request timed out after ${timeoutMs}ms. The model may be loading or the machine lacks resources.`);
+      abortErr.ollama_status = "timeout";
+      throw abortErr;
+    }
+
+    const isOffline = err?.cause?.code === "ECONNREFUSED" ||
+      err?.code === "ECONNREFUSED" ||
+      err?.message?.includes("ECONNREFUSED") ||
+      err?.message?.includes("fetch failed");
+    if (isOffline) {
+      const offlineErr = new Error(`Ollama AI service is not running at ${ollamaUrl}. Start it with: ollama serve`);
+      offlineErr.ollama_status = "offline";
+      throw offlineErr;
+    }
+
+    const networkErr = new Error(`Failed to communicate with Ollama AI service: ${err.message}`);
+    networkErr.ollama_status = "error";
+    throw networkErr;
+  } finally {
+    clearTimeout(timeoutId);
   }
 
-  // Graceful fallback to smart heuristic parser generator
-  const fallback = generateFallbackParser(cluster);
-  fallback.source = "heuristic_fallback";
-  return fallback;
+  if (!response.ok) {
+    const httpErr = new Error(`Ollama returned HTTP ${response.status}: ${response.statusText || "Request failed"}`);
+    httpErr.ollama_status = "error";
+    throw httpErr;
+  }
+
+  const data = await response.json();
+  let responseText = data?.response;
+  if (typeof responseText !== "string") {
+    const emptyErr = new Error("Ollama returned empty or missing response payload");
+    emptyErr.ollama_status = "invalid_response";
+    throw emptyErr;
+  }
+
+  responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+  let parsedCandidate;
+  try {
+    parsedCandidate = JSON.parse(responseText);
+  } catch (_parseError) {
+    const jsonErr = new Error(`AI model returned invalid JSON. Raw response: ${responseText.substring(0, 200)}`);
+    jsonErr.ollama_status = "invalid_response";
+    throw jsonErr;
+  }
+
+  if (
+    !parsedCandidate ||
+    typeof parsedCandidate !== "object" ||
+    !parsedCandidate.detection ||
+    !Array.isArray(parsedCandidate.extraction_rules)
+  ) {
+    const presentKeys = parsedCandidate && typeof parsedCandidate === "object"
+      ? Object.keys(parsedCandidate).join(", ")
+      : "none";
+    const schemaErr = new Error(`AI model returned JSON but missing required fields (detection, extraction_rules). Got keys: ${presentKeys}`);
+    schemaErr.ollama_status = "invalid_schema";
+    throw schemaErr;
+  }
+
+  if (!parsedCandidate.parser_id) parsedCandidate.parser_id = "ai_candidate_v1.0";
+  if (!parsedCandidate.version) parsedCandidate.version = "1.0";
+  parsedCandidate.source = "ollama_" + model;
+  parsedCandidate.is_generated = true;
+  parsedCandidate.generated_at = new Date().toISOString();
+
+  const testRes = testCandidate(parsedCandidate, samples, []);
+  if (!testRes || !testRes.positive || testRes.positive.passed === 0) {
+    const testErr = new Error("AI-generated parser failed testing — 0 positive samples matched. The model may need a better prompt or more samples.");
+    testErr.ollama_status = "test_failed";
+    throw testErr;
+  }
+
+  return parsedCandidate;
 }
 
 /**
