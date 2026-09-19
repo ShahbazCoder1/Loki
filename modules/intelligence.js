@@ -156,10 +156,11 @@ export function clusterQuarantinedEvents(options = {}) {
 }
 
 /**
- * 3. Generate candidate parser from cluster samples using Ollama or fallback
+ * 3. Generate candidate parser from cluster samples using Ollama AI
  * @param {Object} cluster - Cluster object with samples and template
- * @param {Object} [options] - Options (ollamaUrl, model)
- * @returns {Promise<Object>} Generated candidate parser
+ * @param {Object} [options] - Options (ollamaUrl, model, timeout)
+ * @returns {Promise<Object>} Generated candidate parser object
+ * @throws {Error} Error with `ollama_status` ("offline" | "timeout" | "error" | "invalid_response" | "invalid_schema" | "test_failed")
  */
 export async function generateCandidateParser(cluster, options = {}) {
   const ollamaUrl = options.ollamaUrl || "http://localhost:11434/api/generate";
@@ -220,12 +221,13 @@ CRITICAL RULES:
 - MANDATORY: The regex for EVERY rule in extraction_rules MUST place parentheses () around the captured value (e.g. "<\\\\d+>(\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}Z)" for timestamp). Without () parentheses, field extraction will fail!
 - Return ONLY valid JSON. No markdown formatting, no code fences, no extra text.`;
 
-  try {
-    const controller = new AbortController();
-    const timeoutMs = options.timeout || 30000;
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const controller = new AbortController();
+  const timeoutMs = options.timeout || 30000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    const response = await fetch(ollamaUrl, {
+  let response;
+  try {
+    response = await fetch(ollamaUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -236,33 +238,82 @@ CRITICAL RULES:
       }),
       signal: controller.signal
     });
-
-    clearTimeout(timeoutId);
-
-    if (response.ok) {
-      const data = await response.json();
-      let responseText = data.response;
-      // Strip markdown fences if present
-      responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-      const parsedCandidate = JSON.parse(responseText);
-
-      // Validate core properties and ensure extraction rules are valid JavaScript regexes
-      if (parsedCandidate && parsedCandidate.detection && Array.isArray(parsedCandidate.extraction_rules)) {
-        if (!parsedCandidate.parser_id) parsedCandidate.parser_id = "ai_candidate_v1.0";
-        if (!parsedCandidate.version) parsedCandidate.version = "1.0";
-        parsedCandidate.source = "ollama_" + model;
-        parsedCandidate.is_generated = true;
-        parsedCandidate.generated_at = new Date().toISOString();
-
-        const testRes = testCandidate(parsedCandidate, samples, []);
-        if (testRes.positive.passed > 0) {
-          return parsedCandidate;
-        }
-      }
-    }
   } catch (err) {
-    // Ollama unreachable or timed out
+    if (err.name === "AbortError") {
+      const abortErr = new Error(`Ollama request timed out after ${timeoutMs}ms. The model may be loading or the machine lacks resources.`);
+      abortErr.ollama_status = "timeout";
+      throw abortErr;
+    }
+
+    const isOffline = err?.cause?.code === "ECONNREFUSED" ||
+      err?.code === "ECONNREFUSED" ||
+      err?.message?.includes("ECONNREFUSED") ||
+      err?.message?.includes("fetch failed");
+    if (isOffline) {
+      const offlineErr = new Error(`Ollama AI service is not running at ${ollamaUrl}. Start it with: ollama serve`);
+      offlineErr.ollama_status = "offline";
+      throw offlineErr;
+    }
+
+    const networkErr = new Error(`Failed to communicate with Ollama AI service: ${err.message}`);
+    networkErr.ollama_status = "error";
+    throw networkErr;
+  } finally {
+    clearTimeout(timeoutId);
   }
+
+  if (!response.ok) {
+    const httpErr = new Error(`Ollama returned HTTP ${response.status}: ${response.statusText || "Request failed"}`);
+    httpErr.ollama_status = "error";
+    throw httpErr;
+  }
+
+  const data = await response.json();
+  let responseText = data?.response;
+  if (typeof responseText !== "string") {
+    const emptyErr = new Error("Ollama returned empty or missing response payload");
+    emptyErr.ollama_status = "invalid_response";
+    throw emptyErr;
+  }
+
+  responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+  let parsedCandidate;
+  try {
+    parsedCandidate = JSON.parse(responseText);
+  } catch (_parseError) {
+    const jsonErr = new Error(`AI model returned invalid JSON. Raw response: ${responseText.substring(0, 200)}`);
+    jsonErr.ollama_status = "invalid_response";
+    throw jsonErr;
+  }
+
+  if (
+    !parsedCandidate ||
+    typeof parsedCandidate !== "object" ||
+    !parsedCandidate.detection ||
+    !Array.isArray(parsedCandidate.extraction_rules)
+  ) {
+    const presentKeys = parsedCandidate && typeof parsedCandidate === "object"
+      ? Object.keys(parsedCandidate).join(", ")
+      : "none";
+    const schemaErr = new Error(`AI model returned JSON but missing required fields (detection, extraction_rules). Got keys: ${presentKeys}`);
+    schemaErr.ollama_status = "invalid_schema";
+    throw schemaErr;
+  }
+
+  if (!parsedCandidate.parser_id) parsedCandidate.parser_id = "ai_candidate_v1.0";
+  if (!parsedCandidate.version) parsedCandidate.version = "1.0";
+  parsedCandidate.source = "ollama_" + model;
+  parsedCandidate.is_generated = true;
+  parsedCandidate.generated_at = new Date().toISOString();
+
+  const testRes = testCandidate(parsedCandidate, samples, []);
+  if (!testRes || !testRes.positive || testRes.positive.passed === 0) {
+    const testErr = new Error("AI-generated parser failed testing — 0 positive samples matched. The model may need a better prompt or more samples.");
+    testErr.ollama_status = "test_failed";
+    throw testErr;
+  }
+
+  return parsedCandidate;
 }
 
 /**
