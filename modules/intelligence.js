@@ -156,107 +156,6 @@ export function clusterQuarantinedEvents(options = {}) {
 }
 
 /**
- * Helper to generate smart fallback parser when Ollama is unavailable
- */
-function generateFallbackParser(cluster) {
-  const sample = (cluster.samples && cluster.samples[0]) || cluster.template || "";
-  
-  let parserId = "custom_device";
-  let deviceFamily = "Generic Network Device";
-  let structure = "syslog_text";
-  const signatures = [];
-  const extractionRules = [];
-  const requiredFields = [];
-  const normalizationMapping = {};
-
-  // Detect signature from known patterns in sample
-  if (sample.includes("filterlog")) {
-    parserId = "pfsense_filterlog";
-    deviceFamily = "pfSense";
-    structure = "csv";
-    signatures.push("filterlog");
-    extractionRules.push(
-      { field: "src_ip", regex: "(?:\\d+,){19}(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" },
-      { field: "dst_ip", regex: "(?:\\d+,){20}(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" },
-      { field: "action", regex: "(?:pass|block|match,block|match,pass)" }
-    );
-    requiredFields.push("src_ip", "action");
-    normalizationMapping.src_ip = "src_endpoint.ip";
-    normalizationMapping.dst_ip = "dst_endpoint.ip";
-    normalizationMapping.action = "action";
-  } else if (sample.includes("RT_FLOW")) {
-    parserId = "juniper_srx";
-    deviceFamily = "Juniper SRX";
-    structure = "syslog_text";
-    signatures.push("RT_FLOW:");
-    extractionRules.push(
-      { field: "event_type", regex: "(RT_FLOW_SESSION_[A-Z_]+)" },
-      { field: "src_ip", regex: "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})/\\d+->" },
-      { field: "src_port", regex: "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/(\\d+)->" },
-      { field: "dst_ip", regex: "->(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})/\\d+" },
-      { field: "dst_port", regex: "->\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/(\\d+)" }
-    );
-    requiredFields.push("src_ip", "dst_ip", "event_type");
-    normalizationMapping.src_ip = "src_endpoint.ip";
-    normalizationMapping.dst_ip = "dst_endpoint.ip";
-    normalizationMapping.src_port = "src_endpoint.port";
-    normalizationMapping.dst_port = "dst_endpoint.port";
-    normalizationMapping.event_type = "event_type";
-  } else if (sample.includes("sshd[")) {
-    parserId = "linux_sshd";
-    deviceFamily = "Linux SSH";
-    structure = "syslog_text";
-    signatures.push("sshd[");
-    extractionRules.push(
-      { field: "action", regex: "\\b(Failed|Accepted)\\s+password" },
-      { field: "user", regex: "for\\s+(?:invalid\\s+user\\s+)?([\\w.-]+)\\s+from" },
-      { field: "src_ip", regex: "from\\s+(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" },
-      { field: "src_port", regex: "port\\s+(\\d+)" }
-    );
-    requiredFields.push("src_ip", "action");
-    normalizationMapping.src_ip = "src_endpoint.ip";
-    normalizationMapping.src_port = "src_endpoint.port";
-    normalizationMapping.action = "action";
-  } else {
-    // Generic auto-extractor from sample
-    const words = sample.split(/\s+/);
-    const candidateSig = words.find(w => w.length > 4 && /^[a-zA-Z0-9_-]+[:[]?$/.test(w)) || words[0] || "LOG_EVENT";
-    signatures.push(candidateSig.replace(/[:[\]]/g, ""));
-    
-    // IP extractors
-    if (/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(sample)) {
-      extractionRules.push({ field: "src_ip", regex: "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" });
-      requiredFields.push("src_ip");
-      normalizationMapping.src_ip = "src_endpoint.ip";
-    }
-    
-    // Action extractors
-    if (/(allow|block|drop|deny|accept|reject|pass)/i.test(sample)) {
-      extractionRules.push({ field: "action", regex: "\\b(allow|block|drop|deny|accept|reject|pass)\\b" });
-      requiredFields.push("action");
-      normalizationMapping.action = "action";
-    }
-  }
-
-  return {
-    parser_id: parserId + "_v1.0",
-    version: "1.0",
-    device_family: deviceFamily,
-    description: `Auto-generated parser for ${deviceFamily}`,
-    detection: {
-      signatures,
-      structure,
-      keywords: signatures
-    },
-    extraction_rules: extractionRules,
-    required_fields: requiredFields,
-    normalization_mapping: normalizationMapping,
-    is_generated: true,
-    generated_at: new Date().toISOString()
-  };
-}
-
-/**
  * 3. Generate candidate parser from cluster samples using Ollama or fallback
  * @param {Object} cluster - Cluster object with samples and template
  * @param {Object} [options] - Options (ollamaUrl, model)
@@ -362,13 +261,8 @@ CRITICAL RULES:
       }
     }
   } catch (err) {
-    // Ollama unreachable or timed out -> use smart fallback
+    // Ollama unreachable or timed out
   }
-
-  // Graceful fallback to smart heuristic parser generator
-  const fallback = generateFallbackParser(cluster);
-  fallback.source = "heuristic_fallback";
-  return fallback;
 }
 
 /**
