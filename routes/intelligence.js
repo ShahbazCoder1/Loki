@@ -20,31 +20,39 @@ function getBaseUrl() {
 
 // Helper to ensure candidates exist from available clusters if store is empty
 async function ensureCandidates() {
-  if (pendingCandidates.size === 0) {
+  const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
+  const existingClusterIds = new Set(Array.from(pendingCandidates.values()).map(c => c.cluster_id));
+  const unhandledClusters = clusters.filter(c => c.cluster_id && !existingClusterIds.has(c.cluster_id));
+
+  if (unhandledClusters.length > 0) {
+    unhandledClusters.sort((a, b) => {
+      const timeA = new Date(a.last_seen || a.first_seen || 0).getTime();
+      const timeB = new Date(b.last_seen || b.first_seen || 0).getTime();
+      return timeB - timeA;
+    });
+
+    const cluster = unhandledClusters[0];
     const baseUrl = getBaseUrl();
-    const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
-    for (const cluster of clusters) {
-      try {
-        const candidate = await generateCandidateParser(cluster, { timeout: 2000 });
-        const testRes = testCandidate(candidate, cluster.samples || [], []);
-        const candidate_id = candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`;
-        const candidateRecord = {
-          candidate_id,
-          cluster_id: cluster.cluster_id,
-          device_family: candidate.device_family || "Unknown Device",
-          cluster_size: cluster.count || (cluster.samples ? cluster.samples.length : 1),
-          first_seen: cluster.first_seen || new Date().toISOString(),
-          last_seen: cluster.last_seen || new Date().toISOString(),
-          approve_url: `${baseUrl}/approve/${candidate_id}`,
-          reject_url: `${baseUrl}/reject/${candidate_id}`,
-          candidate,
-          test_results: testRes,
-          status: "pending"
-        };
-        pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
-      } catch (error) {
-        console.warn(`[Intelligence] Failed to generate candidate for cluster ${cluster.cluster_id}:`, error.message);
-      }
+    try {
+      const candidate = await generateCandidateParser(cluster, { timeout: 30000 });
+      const testRes = testCandidate(candidate, cluster.samples || [], []);
+      const candidate_id = candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`;
+      const candidateRecord = {
+        candidate_id,
+        cluster_id: cluster.cluster_id,
+        device_family: candidate.device_family || "Unknown Device",
+        cluster_size: cluster.count || (cluster.samples ? cluster.samples.length : 1),
+        first_seen: cluster.first_seen || new Date().toISOString(),
+        last_seen: cluster.last_seen || new Date().toISOString(),
+        approve_url: `${baseUrl}/approve/${candidate_id}`,
+        reject_url: `${baseUrl}/reject/${candidate_id}`,
+        candidate,
+        test_results: testRes,
+        status: "pending"
+      };
+      pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
+    } catch (error) {
+      console.warn(`[Intelligence] Failed to generate candidate for cluster ${cluster.cluster_id}:`, error.message);
     }
   }
 
@@ -92,7 +100,7 @@ router.get("/candidates/:candidate_id", async (req, res) => {
 });
 
 // 2. POST /api/intelligence/cluster
-router.post("/cluster", (req, res) => {
+router.post("/cluster", async (req, res) => {
   try {
     const options = {
       useSampleFallbacks: req.body?.useSampleFallbacks ?? true,
@@ -100,7 +108,7 @@ router.post("/cluster", (req, res) => {
       quarantineDir: req.body?.quarantineDir
     };
 
-    const clusters = clusterQuarantinedEvents(options);
+    const clusters = await clusterQuarantinedEvents(options);
     const totalEvents = clusters.reduce((acc, c) => acc + c.count, 0);
 
     return res.json({
@@ -129,12 +137,12 @@ router.post("/generate", async (req, res) => {
         samples
       };
     } else if (cluster_id) {
-      const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
+      const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
       targetCluster = clusters.find(c => c.cluster_id === cluster_id || c.fingerprint_hash === cluster_id);
     }
 
     if (!targetCluster) {
-      const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
+      const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
       if (clusters.length > 0) {
         targetCluster = clusters[0];
       }
@@ -146,7 +154,7 @@ router.post("/generate", async (req, res) => {
       });
     }
 
-    const candidate = await generateCandidateParser(targetCluster, options);
+    const candidate = await generateCandidateParser(targetCluster, { timeout: 30000, ...options });
     const testResults = testCandidate(candidate, targetCluster.samples || candidate.samples || [], []);
 
     const baseUrl = getBaseUrl();

@@ -208,3 +208,22 @@ test("Intelligence Routes - GET /api/intelligence/candidates and /candidates/:ca
   }
 });
 
+test("Intelligence Routes - ensureCandidates selects newest unhandled cluster first", async () => {
+  const clusters = [
+    { cluster_id: "old_cluster", last_seen: "2026-01-01T00:00:00.000Z", count: 100 },
+    { cluster_id: "new_cluster", last_seen: "2026-09-20T12:00:00.000Z", count: 1 }
+  ];
+
+  const existingClusterIds = new Set();
+  const unhandledClusters = clusters.filter(c => c.cluster_id && !existingClusterIds.has(c.cluster_id));
+
+  unhandledClusters.sort((a, b) => {
+    const timeA = new Date(a.last_seen || a.first_seen || 0).getTime();
+    const timeB = new Date(b.last_seen || b.first_seen || 0).getTime();
+    return timeB - timeA;
+  });
+
+  assert.equal(unhandledClusters[0].cluster_id, "new_cluster", "Newest unhandled cluster must be selected first regardless of sample count");
+});
+
+

@@ -28,14 +28,14 @@ test("Intelligence Plane - Fingerprinting variables to template", () => {
   assert.equal(fp1.hash, fp2.hash, "Logs with identical structure must share the same structural fingerprint hash");
 });
 
-test("Intelligence Plane - Clustering quarantined events", () => {
+test("Intelligence Plane - Clustering quarantined events", async () => {
   const mockEvents = [
     { raw: { immutable_payload: "Aug 25 10:00:00 juniper-srx RT_FLOW: session created 10.0.0.5/1234->192.168.1.1/443" } },
     { raw: { immutable_payload: "Aug 25 10:01:00 juniper-srx RT_FLOW: session created 10.0.0.99/5555->172.16.1.1/80" } },
     { raw: { immutable_payload: "Aug 25 10:02:00 web-server-01 sshd[123]: Failed password for root from 198.51.100.22 port 51234" } }
   ];
 
-  const clusters = clusterQuarantinedEvents({ events: mockEvents });
+  const clusters = await clusterQuarantinedEvents({ events: mockEvents });
 
   assert.equal(clusters.length, 2, "Should form exactly 2 distinct structural clusters");
   assert.equal(clusters[0].count, 2, "Top cluster should have count of 2");
