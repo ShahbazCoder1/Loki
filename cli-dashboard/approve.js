@@ -10,410 +10,594 @@ const RED = "\x1b[31m";
 const CYAN = "\x1b[36m";
 
 function color(text, code) {
-  return `${code}${text}${RESET}`;
+    return `${code}${text}${RESET}`;
 }
 
 function truncate(value, width) {
-  const text = String(value ?? "-");
+    const text = String(value ?? "-");
 
-  if (text.length <= width) {
-    return text.padEnd(width);
-  }
+    if (text.length <= width) {
+        return text.padEnd(width);
+    }
 
-  return `${text.slice(0, width - 3)}...`;
+    return `${text.slice(0, width - 3)}...`;
 }
 
+/* -------------------------------------------------------------------------- */
+/* API                                                                        */
+/* -------------------------------------------------------------------------- */
+
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {}),
+        },
+    });
 
-  let data;
+    let data = null;
 
-  try {
-    data = await response.json();
-  } catch {
-    data = null;
-  }
+    try {
+        data = await response.json();
+    } catch {
+        // Empty/non-JSON response
+    }
 
-  if (!response.ok) {
-    const message =
-      data?.message ||
-      data?.error ||
-      data?.details ||
-      `${response.status} ${response.statusText}`;
+    if (!response.ok) {
+        const message =
+            data?.message ||
+            data?.error ||
+            data?.details ||
+            `${response.status} ${response.statusText}`;
 
-    throw new Error(`${response.status} ${message}`);
-  }
+        throw new Error(`${response.status} ${message}`);
+    }
 
-  return data;
+    return data;
 }
 
 async function getCandidates() {
-  const data = await apiRequest("/api/intelligence/candidates");
+    const data = await apiRequest(
+        "/api/intelligence/candidates"
+    );
 
-  return data?.candidates || [];
+    return data?.candidates || [];
 }
+
+/* -------------------------------------------------------------------------- */
+/* CANDIDATE TABLE                                                            */
+/* -------------------------------------------------------------------------- */
 
 function printCandidateTable(candidates) {
-  console.log();
-  console.log(color("CANDIDATE PARSER APPROVAL", BOLD + CYAN));
-  console.log();
+    console.log();
+    console.log(
+        color("CANDIDATE PARSER APPROVAL", BOLD + CYAN)
+    );
+    console.log();
 
-  const columns = [
-    ["#", 4],
-    ["Candidate ID", 30],
-    ["Device Family", 20],
-    ["Cluster", 8],
-    ["Tests", 10],
-    ["Status", 12],
-  ];
+    const widths = {
+        number: 4,
+        id: 30,
+        device: 20,
+        cluster: 8,
+        tests: 10,
+        status: 12,
+    };
 
-  const border =
-    "─".repeat(4 + 2) +
-    "┼" +
-    "─".repeat(30 + 2) +
-    "┼" +
-    "─".repeat(20 + 2) +
-    "┼" +
-    "─".repeat(8 + 2) +
-    "┼" +
-    "─".repeat(10 + 2) +
-    "┼" +
-    "─".repeat(12 + 2);
+    const top =
+        `┌${"─".repeat(widths.number + 2)}` +
+        `┬${"─".repeat(widths.id + 2)}` +
+        `┬${"─".repeat(widths.device + 2)}` +
+        `┬${"─".repeat(widths.cluster + 2)}` +
+        `┬${"─".repeat(widths.tests + 2)}` +
+        `┬${"─".repeat(widths.status + 2)}┐`;
 
-  console.log(`┌${border}┐`);
+    const middle =
+        `├${"─".repeat(widths.number + 2)}` +
+        `┼${"─".repeat(widths.id + 2)}` +
+        `┼${"─".repeat(widths.device + 2)}` +
+        `┼${"─".repeat(widths.cluster + 2)}` +
+        `┼${"─".repeat(widths.tests + 2)}` +
+        `┼${"─".repeat(widths.status + 2)}┤`;
 
-  console.log(
-    `│ ${truncate("#", 4)} │ ` +
-      `${truncate("Candidate ID", 30)} │ ` +
-      `${truncate("Device Family", 20)} │ ` +
-      `${truncate("Cluster", 8)} │ ` +
-      `${truncate("Tests", 10)} │ ` +
-      `${truncate("Status", 12)} │`
-  );
+    const bottom =
+        `└${"─".repeat(widths.number + 2)}` +
+        `┴${"─".repeat(widths.id + 2)}` +
+        `┴${"─".repeat(widths.device + 2)}` +
+        `┴${"─".repeat(widths.cluster + 2)}` +
+        `┴${"─".repeat(widths.tests + 2)}` +
+        `┴${"─".repeat(widths.status + 2)}┘`;
 
-  console.log(`├${border}┤`);
+    function row(
+        number,
+        candidateId,
+        deviceFamily,
+        cluster,
+        tests,
+        status
+    ) {
+        return (
+            `│ ${truncate(number, widths.number)} │ ` +
+            `${truncate(candidateId, widths.id)} │ ` +
+            `${truncate(deviceFamily, widths.device)} │ ` +
+            `${truncate(cluster, widths.cluster)} │ ` +
+            `${truncate(tests, widths.tests)} │ ` +
+            `${truncate(status, widths.status)} │`
+        );
+    }
 
-  candidates.forEach((candidate, index) => {
-    const positive = candidate.test_results?.positive;
-    const tests = positive
-      ? `${positive.passed}/${positive.total}`
-      : "-";
+    console.log(top);
 
     console.log(
-      `│ ${truncate(index + 1, 4)} │ ` +
-        `${truncate(candidate.candidate_id, 30)} │ ` +
-        `${truncate(candidate.device_family, 20)} │ ` +
-        `${truncate(candidate.cluster_size, 8)} │ ` +
-        `${truncate(tests, 10)} │ ` +
-        `${truncate(candidate.status, 12)} │`
+        row(
+            "#",
+            "Candidate ID",
+            "Device Family",
+            "Cluster",
+            "Tests",
+            "Status"
+        )
     );
-  });
 
-  console.log(`└${border}┘`);
+    console.log(middle);
+
+    candidates.forEach((candidate, index) => {
+        const positive = candidate.test_results?.positive;
+
+        const tests = positive
+            ? `${positive.passed}/${positive.total}`
+            : "-";
+
+        console.log(
+            row(
+                index + 1,
+                candidate.candidate_id,
+                candidate.device_family,
+                candidate.cluster_size,
+                tests,
+                candidate.status
+            )
+        );
+    });
+
+    console.log(bottom);
 }
+
+/* -------------------------------------------------------------------------- */
+/* CANDIDATE DETAILS                                                          */
+/* -------------------------------------------------------------------------- */
 
 function printCandidateDetails(candidate) {
-  const parser = candidate.candidate || {};
-  const detection = parser.detection || {};
-  const tests = candidate.test_results || {};
-  const positive = tests.positive || {};
-  const negative = tests.negative || {};
+    const parser = candidate.candidate || {};
+    const detection = parser.detection || {};
+    const tests = candidate.test_results || {};
 
-  console.log();
-  console.log(color("╔══════════════════════════════════════════════════════════════╗", CYAN));
-  console.log(
-    color("║              LOKI PARSER CANDIDATE                         ║", BOLD + CYAN)
-  );
-  console.log(color("╠══════════════════════════════════════════════════════════════╣", CYAN));
+    const positive = tests.positive || {};
+    const negative = tests.negative || {};
 
-  console.log(
-    `║ Candidate ID : ${candidate.candidate_id}`
-  );
-  console.log(
-    `║ Parser ID    : ${parser.parser_id || "-"}`
-  );
-  console.log(
-    `║ Version      : ${parser.version || "-"}`
-  );
-  console.log(
-    `║ Device Family: ${parser.device_family || "-"}`
-  );
-  console.log(
-    `║ Cluster Size : ${candidate.cluster_size ?? "-"}`
-  );
-  console.log(
-    `║ Status       : ${candidate.status || "-"}`
-  );
-  console.log(
-    `║ Generated    : ${parser.is_generated ? "YES" : "NO"}`
-  );
-  console.log(
-    `║ Source       : ${parser.source || "-"}`
-  );
+    const details = [
+        `Candidate ID : ${candidate.candidate_id || "-"}`,
+        `Parser ID    : ${parser.parser_id || "-"}`,
+        `Version      : ${parser.version || "-"}`,
+        `Device Family: ${parser.device_family || "-"}`,
+        `Cluster Size : ${candidate.cluster_size ?? "-"}`,
+        `Status       : ${candidate.status || "-"}`,
+        `Generated    : ${parser.is_generated ? "YES" : "NO"}`,
+        `Source       : ${parser.source || "-"}`,
+    ];
 
-  console.log(color("╚══════════════════════════════════════════════════════════════╝", CYAN));
+    const title = " LOKI PARSER CANDIDATE ";
 
-  console.log();
-  console.log(color("1. DETECTION", BOLD + CYAN));
-  console.log(`Structure : ${detection.structure || "-"}`);
-  console.log(
-    `Keywords  : ${(detection.keywords || []).join(", ") || "-"}`
-  );
+    // Calculate the box width from the longest actual line.
+    const innerWidth = Math.max(
+        58,
+        title.length,
+        ...details.map((line) => line.length)
+    );
 
-  if (detection.signatures?.length) {
-    console.log("Signatures:");
+    const horizontal = "─".repeat(innerWidth);
 
-    for (const signature of detection.signatures) {
-      console.log(`  • ${signature}`);
+    console.log();
+
+    console.log(
+        color(`╔${horizontal}╗`, CYAN)
+    );
+
+    console.log(
+        color(
+            `║${title.padEnd(innerWidth)}║`,
+            BOLD + CYAN
+        )
+    );
+
+    console.log(
+        color(`╠${horizontal}╣`, CYAN)
+    );
+
+    for (const line of details) {
+        console.log(
+            `║${line.padEnd(innerWidth)}║`
+        );
     }
-  }
 
-  console.log();
-  console.log(color("2. EXTRACTION RULES", BOLD + CYAN));
+    console.log(
+        color(`╚${horizontal}╝`, CYAN)
+    );
 
-  if (parser.extraction_rules?.length) {
-    for (const rule of parser.extraction_rules) {
-      console.log(`  ${rule.field}: ${rule.regex}`);
+    /* ------------------------------ Detection ----------------------------- */
+
+    console.log();
+    console.log(
+        color("1. DETECTION", BOLD + CYAN)
+    );
+
+    console.log(
+        `Structure : ${detection.structure || "-"}`
+    );
+
+    console.log(
+        `Keywords  : ${
+            (detection.keywords || []).join(", ") || "-"
+        }`
+    );
+
+    if (detection.signatures?.length) {
+        console.log("Signatures:");
+
+        for (const signature of detection.signatures) {
+            console.log(`  • ${signature}`);
+        }
     }
-  } else {
-    console.log("  None");
-  }
 
-  console.log();
-  console.log(color("3. REQUIRED FIELDS", BOLD + CYAN));
-  console.log(
-    `  ${(parser.required_fields || []).join(", ") || "None"}`
-  );
+    /* --------------------------- Extraction Rules ------------------------- */
 
-  console.log();
-  console.log(color("4. NORMALIZATION MAPPING", BOLD + CYAN));
+    console.log();
+    console.log(
+        color("2. EXTRACTION RULES", BOLD + CYAN)
+    );
 
-  const mappings = parser.normalization_mapping || {};
-
-  if (Object.keys(mappings).length) {
-    for (const [from, to] of Object.entries(mappings)) {
-      console.log(`  ${from} → ${to}`);
+    if (parser.extraction_rules?.length) {
+        for (const rule of parser.extraction_rules) {
+            console.log(
+                `  ${rule.field}: ${rule.regex}`
+            );
+        }
+    } else {
+        console.log("  None");
     }
-  } else {
-    console.log("  None");
-  }
 
-  console.log();
-  console.log(color("5. TEST RESULTS", BOLD + CYAN));
+    /* ---------------------------- Required Fields ------------------------- */
 
-  console.log(
-    `  Positive: ${positive.passed ?? 0}/${positive.total ?? 0} passed`
-  );
+    console.log();
+    console.log(
+        color("3. REQUIRED FIELDS", BOLD + CYAN)
+    );
 
-  console.log(
-    `  Negative: ${negative.correctly_rejected ?? 0}/${negative.total ?? 0} rejected`
-  );
+    console.log(
+        `  ${
+            (parser.required_fields || []).join(", ") ||
+            "None"
+        }`
+    );
 
-  const overallPass = tests.overall_pass;
+    /* ------------------------- Normalization Mapping ---------------------- */
 
-  console.log(
-    `  Overall : ${
-      overallPass
-        ? color("PASS", GREEN)
-        : color("FAIL", RED)
-    }`
-  );
+    console.log();
+    console.log(
+        color(
+            "4. NORMALIZATION MAPPING",
+            BOLD + CYAN
+        )
+    );
 
-  console.log();
+    const mappings =
+        parser.normalization_mapping || {};
+
+    if (Object.keys(mappings).length) {
+        for (const [from, to] of Object.entries(mappings)) {
+            console.log(`  ${from} → ${to}`);
+        }
+    } else {
+        console.log("  None");
+    }
+
+    /* ------------------------------ Test Results -------------------------- */
+
+    console.log();
+    console.log(
+        color("5. TEST RESULTS", BOLD + CYAN)
+    );
+
+    console.log(
+        `  Positive: ${
+            positive.passed ?? 0
+        }/${positive.total ?? 0} passed`
+    );
+
+    console.log(
+        `  Negative: ${
+            negative.correctly_rejected ?? 0
+        }/${negative.total ?? 0} rejected`
+    );
+
+    console.log(
+        `  Overall : ${
+            tests.overall_pass
+                ? color("PASS", GREEN)
+                : color("FAIL", RED)
+        }`
+    );
+
+    console.log();
 }
 
+/* -------------------------------------------------------------------------- */
+/* APPROVE / REJECT                                                           */
+/* -------------------------------------------------------------------------- */
+
 async function approveCandidate(candidateId) {
-  console.log(
-    `\nApproving candidate ${color(candidateId, CYAN)}...\n`
-  );
+    console.log(
+        `\nApproving candidate ${color(
+            candidateId,
+            CYAN
+        )}...\n`
+    );
 
-  const result = await apiRequest("/api/intelligence/approve", {
-    method: "POST",
-    body: JSON.stringify({
-      candidate_id: candidateId,
-    }),
-  });
+    const result = await apiRequest(
+        "/api/intelligence/approve",
+        {
+            method: "POST",
+            body: JSON.stringify({
+                candidate_id: candidateId,
+            }),
+        }
+    );
 
-  console.log(
-    color("✓ Candidate approved successfully.", GREEN)
-  );
+    console.log(
+        color(
+            "✓ Candidate approved successfully.",
+            GREEN
+        )
+    );
 
-  if (result?.message) {
-    console.log(result.message);
-  }
+    if (result?.message) {
+        console.log(result.message);
+    }
 
-  console.log();
+    console.log();
 }
 
 async function rejectCandidate(candidateId) {
-  console.log(
-    `\nRejecting candidate ${color(candidateId, CYAN)}...\n`
-  );
+    console.log(
+        `\nRejecting candidate ${color(
+            candidateId,
+            CYAN
+        )}...\n`
+    );
 
-  const result = await apiRequest("/api/intelligence/reject", {
-    method: "POST",
-    body: JSON.stringify({
-      candidate_id: candidateId,
-    }),
-  });
+    const result = await apiRequest(
+        "/api/intelligence/reject",
+        {
+            method: "POST",
+            body: JSON.stringify({
+                candidate_id: candidateId,
+            }),
+        }
+    );
 
-  console.log(
-    color("✓ Candidate rejected successfully.", YELLOW)
-  );
+    console.log(
+        color(
+            "✓ Candidate rejected successfully.",
+            YELLOW
+        )
+    );
 
-  if (result?.message) {
-    console.log(result.message);
-  }
+    if (result?.message) {
+        console.log(result.message);
+    }
 
-  console.log();
+    console.log();
 }
 
+/* -------------------------------------------------------------------------- */
+/* READLINE                                                                   */
+/* -------------------------------------------------------------------------- */
+
 function createReadline() {
-  return readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+    return readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
 }
 
 function ask(rl, question) {
-  return new Promise((resolve) => {
-    rl.question(question, resolve);
-  });
+    return new Promise((resolve) => {
+        rl.question(question, resolve);
+    });
 }
+
+/* -------------------------------------------------------------------------- */
+/* INTERACTIVE MODE                                                           */
+/* -------------------------------------------------------------------------- */
 
 async function interactiveMode() {
-  const candidates = await getCandidates();
+    const candidates = await getCandidates();
 
-  if (!candidates.length) {
-    console.log(color("\nNo pending candidates found.\n", YELLOW));
-    return;
-  }
+    if (!candidates.length) {
+        console.log(
+            color(
+                "\nNo pending candidates found.\n",
+                YELLOW
+            )
+        );
 
-  printCandidateTable(candidates);
-
-  const rl = createReadline();
-
-  try {
-    const answer = await ask(
-      rl,
-      "\nSelect a candidate number: "
-    );
-
-    const index = Number.parseInt(answer.trim(), 10) - 1;
-
-    if (
-      Number.isNaN(index) ||
-      index < 0 ||
-      index >= candidates.length
-    ) {
-      console.log(color("\nInvalid candidate selection.\n", RED));
-      return;
+        return;
     }
 
-    const candidate = candidates[index];
+    printCandidateTable(candidates);
 
-    printCandidateDetails(candidate);
+    const rl = createReadline();
 
-    while (true) {
-      const action = (
-        await ask(
-          rl,
-          "[A]pprove / [R]eject / [B]ack: "
-        )
-      )
-        .trim()
-        .toLowerCase();
+    try {
+        const answer = await ask(
+            rl,
+            "\nSelect a candidate number: "
+        );
 
-      if (action === "a" || action === "approve") {
-        await approveCandidate(candidate.candidate_id);
-        break;
-      }
+        const index =
+            Number.parseInt(answer.trim(), 10) - 1;
 
-      if (action === "r" || action === "reject") {
-        await rejectCandidate(candidate.candidate_id);
-        break;
-      }
+        if (
+            Number.isNaN(index) ||
+            index < 0 ||
+            index >= candidates.length
+        ) {
+            console.log(
+                color(
+                    "\nInvalid candidate selection.\n",
+                    RED
+                )
+            );
 
-      if (action === "b" || action === "back") {
-        console.log("\nReturning...\n");
-        break;
-      }
+            return;
+        }
 
-      console.log(
-        color("Please enter A, R, or B.", YELLOW)
-      );
+        const candidate = candidates[index];
+
+        // IMPORTANT:
+        // Actually call the details function.
+        printCandidateDetails(candidate);
+
+        while (true) {
+            const action = (
+                await ask(
+                    rl,
+                    "[A]pprove / [R]eject / [B]ack: "
+                )
+            )
+                .trim()
+                .toLowerCase();
+
+            if (
+                action === "a" ||
+                action === "approve"
+            ) {
+                await approveCandidate(
+                    candidate.candidate_id
+                );
+
+                return;
+            }
+
+            if (
+                action === "r" ||
+                action === "reject"
+            ) {
+                await rejectCandidate(
+                    candidate.candidate_id
+                );
+
+                return;
+            }
+
+            if (
+                action === "b" ||
+                action === "back"
+            ) {
+                console.log("\nReturning...\n");
+                return;
+            }
+
+            console.log(
+                color(
+                    "\nPlease enter A, R, or B.\n",
+                    YELLOW
+                )
+            );
+        }
+    } finally {
+        rl.close();
     }
-  } finally {
-    rl.close();
-  }
 }
 
+/* -------------------------------------------------------------------------- */
+/* MAIN                                                                       */
+/* -------------------------------------------------------------------------- */
+
 async function main() {
-  const command = process.argv[2];
-  const candidateId = process.argv[3];
+    const command = process.argv[2];
+    const candidateId = process.argv[3];
 
-  try {
-    if (!command) {
-      await interactiveMode();
-      return;
-    }
+    try {
+        /* ------------------------- Interactive mode ----------------------- */
 
-    if (command === "approve") {
-      if (!candidateId) {
+        if (!command) {
+            await interactiveMode();
+            return;
+        }
+
+        /* --------------------------- Direct approve ----------------------- */
+
+        if (command === "approve") {
+            if (!candidateId) {
+                console.error(
+                    color(
+                        "Usage: node cli-dashboard/approve.js approve <candidate_id>",
+                        RED
+                    )
+                );
+
+                process.exitCode = 1;
+                return;
+            }
+
+            await approveCandidate(candidateId);
+            return;
+        }
+
+        /* ---------------------------- Direct reject ----------------------- */
+
+        if (command === "reject") {
+            if (!candidateId) {
+                console.error(
+                    color(
+                        "Usage: node cli-dashboard/approve.js reject <candidate_id>",
+                        RED
+                    )
+                );
+
+                process.exitCode = 1;
+                return;
+            }
+
+            await rejectCandidate(candidateId);
+            return;
+        }
+
+        /* ------------------------------ Usage ----------------------------- */
+
         console.error(
-          color(
-            "Usage: node cli-dashboard/approve.js approve <candidate_id>",
-            RED
-          )
+            color(
+                "Usage:\n" +
+                "  node cli-dashboard/approve.js\n" +
+                "  node cli-dashboard/approve.js approve <candidate_id>\n" +
+                "  node cli-dashboard/approve.js reject <candidate_id>",
+                RED
+            )
         );
+
         process.exitCode = 1;
-        return;
-      }
-
-      await approveCandidate(candidateId);
-      return;
-    }
-
-    if (command === "reject") {
-      if (!candidateId) {
+    } catch (error) {
         console.error(
-          color(
-            "Usage: node cli-dashboard/approve.js reject <candidate_id>",
-            RED
-          )
+            color(
+                `\n✗ API request failed: ${error.message}\n`,
+                RED
+            )
         );
+
         process.exitCode = 1;
-        return;
-      }
-
-      await rejectCandidate(candidateId);
-      return;
     }
-
-    console.error(
-      color(
-        "Usage:\n" +
-          "  node cli-dashboard/approve.js\n" +
-          "  node cli-dashboard/approve.js approve <candidate_id>\n" +
-          "  node cli-dashboard/approve.js reject <candidate_id>",
-        RED
-      )
-    );
-
-    process.exitCode = 1;
-  } catch (error) {
-    console.error(
-      color(`\n✗ API request failed: ${error.message}\n`, RED)
-    );
-
-    process.exitCode = 1;
-  }
 }
 
 main();
