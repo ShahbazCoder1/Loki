@@ -264,6 +264,47 @@ function printProvenance(event) {
   console.log();
 }
 
+// Word-wraps a single line to fit within `maxWidth` visible columns.
+// Falls back to a hard break for a single "word" longer than maxWidth
+// (e.g. a long token with no spaces) so it still doesn't overflow the box.
+function wrapLine(line, maxWidth) {
+  const words = line.split(" ");
+  const wrapped = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+
+    if (candidate.length <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) {
+      wrapped.push(current);
+      current = "";
+    }
+
+    if (word.length <= maxWidth) {
+      current = word;
+    } else {
+      // Single token longer than the box width: hard-break it.
+      let remainder = word;
+      while (remainder.length > maxWidth) {
+        wrapped.push(remainder.slice(0, maxWidth));
+        remainder = remainder.slice(maxWidth);
+      }
+      current = remainder;
+    }
+  }
+
+  if (current) {
+    wrapped.push(current);
+  }
+
+  return wrapped.length ? wrapped : [""];
+}
+
 function printRawLog(event) {
   console.log(color("3. RAW LOG", BOLD + CYAN));
   console.log();
@@ -274,13 +315,21 @@ function printRawLog(event) {
     "";
 
   const width = 90;
+  const innerWidth = width - 4;
 
   console.log(`┌${"─".repeat(width - 2)}┐`);
 
-  const lines = String(rawLog).split("\n");
+  // Wrap on real newlines first, then word-wrap each of those lines so
+  // the full immutable payload is always visible — no more truncation
+  // to "...subtype=fo" cutting the log short.
+  const sourceLines = String(rawLog).split("\n");
 
-  for (const line of lines) {
-    console.log(`│ ${line.slice(0, width - 4).padEnd(width - 4)} │`);
+  for (const sourceLine of sourceLines) {
+    const wrappedLines = wrapLine(sourceLine, innerWidth);
+
+    for (const line of wrappedLines) {
+      console.log(`│ ${line.padEnd(innerWidth)} │`);
+    }
   }
 
   console.log(`└${"─".repeat(width - 2)}┘`);
