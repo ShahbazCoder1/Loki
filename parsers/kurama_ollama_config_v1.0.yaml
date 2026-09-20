@@ -1,0 +1,60 @@
+parser_id: kurama_ollama_config_v1.0
+version: "1.0"
+device_family: LLM Configuration Tool
+description: Parses configuration parameters logged by the kurama ollama process.
+detection:
+  signatures:
+    - top_k = 64
+    - top_p = 0.950
+    - xtc_probability = 0.000
+    - xtc_threshold = 0.100
+    - typical_p = 1.000
+    - top_n_sigma = -1.000
+    - temp = 1.000
+  structure: syslog_text
+  keywords:
+    - ollama
+    - top_k
+    - top_p
+    - temp
+extraction_rules:
+  - field: timestamp
+    regex: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2})
+  - field: process_name
+    regex: kurama\s+ollama
+  - field: top_k
+    regex: top_k\s*=\s*(\d+)
+  - field: top_p
+    regex: top_p\s*=\s*([0-9.]+)
+  - field: min_p
+    regex: min_p\s*=\s*(\d+)
+  - field: xtc_probability
+    regex: xtc_probability\s*=\s*([0-9.]+)
+  - field: xtc_threshold
+    regex: xtc_threshold\s*=\s*([0-9.]+)
+  - field: typical_p
+    regex: typical_p\s*=\s*([0-9.]+)
+  - field: top_n_sigma
+    regex: top_n_sigma\s*=\s*(-?\d+)
+  - field: temp
+    regex: temp\s*=\s*([0-9.]+)
+required_fields:
+  - top_k
+  - top_p
+  - min_p
+  - xtc_probability
+  - xtc_threshold
+  - typical_p
+  - top_n_sigma
+  - temp
+normalization_mapping:
+  timestamp: event_timestamp
+  process_name: process.name
+  top_k: config.top_k
+  top_p: config.top_p
+  min_p: config.min_p
+  xtc_probability: config.xtc_probability
+  xtc_threshold: config.xtc_threshold
+  typical_p: config.typical_p
+  top_n_sigma: config.top_n_sigma
+  temp: config.temp
