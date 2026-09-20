@@ -31,6 +31,14 @@ export function createApp({ esClient = client, parsersDir } = {}) {
     res.sendFile(path.resolve("public/trace.html"));
   });
 
+  app.get("/approve/:candidate_id", (_req, res) => {
+    res.sendFile(path.resolve("public/parser-action.html"));
+  });
+
+  app.get("/reject/:candidate_id", (_req, res) => {
+    res.sendFile(path.resolve("public/parser-action.html"));
+  });
+
   app.use("/api/stream", createStreamRouter());
   app.use((_req, res) => res.status(404).json({ error: "Route not found" }));
   app.use((error, _req, res, _next) => {

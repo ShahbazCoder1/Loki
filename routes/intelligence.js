@@ -6,28 +6,46 @@ import {
   activateCandidate,
   analyzeSecurityQuestion
 } from "../modules/intelligence.js";
+import { updateQuarantineCandidateUrls } from "../modules/exporter.js";
 
 const router = express.Router();
 
 // In-memory store for pending candidates
 const pendingCandidates = new Map();
 
+// Helper to get base URL for approve/reject URLs
+function getBaseUrl() {
+  return (process.env.ULPF_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
+}
+
 // Helper to ensure candidates exist from available clusters if store is empty
 async function ensureCandidates() {
-  if (pendingCandidates.size > 0) return Array.from(pendingCandidates.values());
+  const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
+  const existingClusterIds = new Set(Array.from(pendingCandidates.values()).map(c => c.cluster_id));
+  const unhandledClusters = clusters.filter(c => c.cluster_id && !existingClusterIds.has(c.cluster_id));
 
-  const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
-  for (const cluster of clusters) {
+  if (unhandledClusters.length > 0) {
+    unhandledClusters.sort((a, b) => {
+      const timeA = new Date(a.last_seen || a.first_seen || 0).getTime();
+      const timeB = new Date(b.last_seen || b.first_seen || 0).getTime();
+      return timeB - timeA;
+    });
+
+    const cluster = unhandledClusters[0];
+    const baseUrl = getBaseUrl();
     try {
-      const candidate = await generateCandidateParser(cluster, { timeout: 2000 });
+      const candidate = await generateCandidateParser(cluster, { timeout: 30000 });
       const testRes = testCandidate(candidate, cluster.samples || [], []);
+      const candidate_id = candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`;
       const candidateRecord = {
-        candidate_id: candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`,
+        candidate_id,
         cluster_id: cluster.cluster_id,
         device_family: candidate.device_family || "Unknown Device",
         cluster_size: cluster.count || (cluster.samples ? cluster.samples.length : 1),
         first_seen: cluster.first_seen || new Date().toISOString(),
         last_seen: cluster.last_seen || new Date().toISOString(),
+        approve_url: `${baseUrl}/approve/${candidate_id}`,
+        reject_url: `${baseUrl}/reject/${candidate_id}`,
         candidate,
         test_results: testRes,
         status: "pending"
@@ -37,6 +55,14 @@ async function ensureCandidates() {
       console.warn(`[Intelligence] Failed to generate candidate for cluster ${cluster.cluster_id}:`, error.message);
     }
   }
+
+  // Ensure Elasticsearch quarantine documents are updated for all candidates in store
+  for (const candRecord of pendingCandidates.values()) {
+    if (candRecord.cluster_id && candRecord.approve_url && candRecord.reject_url) {
+      await updateQuarantineCandidateUrls(candRecord.cluster_id, candRecord.approve_url, candRecord.reject_url);
+    }
+  }
+
   return Array.from(pendingCandidates.values());
 }
 
@@ -55,8 +81,26 @@ router.get("/candidates", async (_req, res) => {
   }
 });
 
+// 1b. GET /api/intelligence/candidates/:candidate_id
+router.get("/candidates/:candidate_id", async (req, res) => {
+  try {
+    await ensureCandidates();
+    const candidateRecord = pendingCandidates.get(req.params.candidate_id);
+    if (!candidateRecord) {
+      return res.status(404).json({ error: "Candidate not found" });
+    }
+    return res.json({
+      status: "success",
+      candidate: candidateRecord
+    });
+  } catch (error) {
+    console.error("Error retrieving candidate:", error);
+    return res.status(500).json({ error: "Failed to retrieve candidate" });
+  }
+});
+
 // 2. POST /api/intelligence/cluster
-router.post("/cluster", (req, res) => {
+router.post("/cluster", async (req, res) => {
   try {
     const options = {
       useSampleFallbacks: req.body?.useSampleFallbacks ?? true,
@@ -64,7 +108,7 @@ router.post("/cluster", (req, res) => {
       quarantineDir: req.body?.quarantineDir
     };
 
-    const clusters = clusterQuarantinedEvents(options);
+    const clusters = await clusterQuarantinedEvents(options);
     const totalEvents = clusters.reduce((acc, c) => acc + c.count, 0);
 
     return res.json({
@@ -93,12 +137,12 @@ router.post("/generate", async (req, res) => {
         samples
       };
     } else if (cluster_id) {
-      const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
+      const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
       targetCluster = clusters.find(c => c.cluster_id === cluster_id || c.fingerprint_hash === cluster_id);
     }
 
     if (!targetCluster) {
-      const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
+      const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
       if (clusters.length > 0) {
         targetCluster = clusters[0];
       }
@@ -110,22 +154,28 @@ router.post("/generate", async (req, res) => {
       });
     }
 
-    const candidate = await generateCandidateParser(targetCluster, options);
+    const candidate = await generateCandidateParser(targetCluster, { timeout: 30000, ...options });
     const testResults = testCandidate(candidate, targetCluster.samples || candidate.samples || [], []);
 
+    const baseUrl = getBaseUrl();
+    const candidate_id = candidate.parser_id || `candidate_${targetCluster.cluster_id.substring(0, 8)}`;
+
     const candidateRecord = {
-      candidate_id: candidate.parser_id || `candidate_${targetCluster.cluster_id.substring(0, 8)}`,
+      candidate_id,
       cluster_id: targetCluster.cluster_id,
       device_family: candidate.device_family || "Unknown Device",
       cluster_size: targetCluster.count || (targetCluster.samples ? targetCluster.samples.length : 1),
       first_seen: targetCluster.first_seen || new Date().toISOString(),
       last_seen: targetCluster.last_seen || new Date().toISOString(),
+      approve_url: `${baseUrl}/approve/${candidate_id}`,
+      reject_url: `${baseUrl}/reject/${candidate_id}`,
       candidate,
       test_results: testResults,
       status: "pending"
     };
 
     pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
+    updateQuarantineCandidateUrls(targetCluster.cluster_id, candidateRecord.approve_url, candidateRecord.reject_url).catch(() => {});
 
     return res.json({
       status: "generated",

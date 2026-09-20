@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import CryptoJS from "crypto-js";
 import YAML from "yaml";
+import { client as defaultEsClient } from "./exporter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -81,7 +82,7 @@ function extractRaw(item) {
  * @param {Object} [options] - Options (folder, events, useSampleFallbacks)
  * @returns {Array<Object>} List of cluster objects sorted by count desc
  */
-export function clusterQuarantinedEvents(options = {}) {
+export async function clusterQuarantinedEvents(options = {}) {
   const events = [];
 
   // If explicit events passed in options
@@ -100,6 +101,27 @@ export function clusterQuarantinedEvents(options = {}) {
           events.push(content);
         } catch (_) {}
       }
+    }
+  }
+
+  // Query live Elasticsearch ulpf-quarantine index if no events loaded yet and useElasticsearch is not disabled
+  if (events.length === 0 && options.useElasticsearch !== false) {
+    const esClient = options.esClient || defaultEsClient;
+    if (esClient) {
+      try {
+        const response = await esClient.search({
+          index: "ulpf-quarantine",
+          size: 10000,
+          sort: [{ received_at: { order: "asc", unmapped_type: "date" } }],
+          query: { match_all: {} }
+        });
+        const hits = response?.hits?.hits || response?.body?.hits?.hits || [];
+        for (const hit of hits) {
+          if (hit?._source) {
+            events.push(hit._source);
+          }
+        }
+      } catch (_) {}
     }
   }
 

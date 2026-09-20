@@ -15,7 +15,18 @@ const indexPatterns = [
     attributes: {
       title: "ulpf-events*",
       timeFieldName: "received_at",
-      name: "ulpf-events"
+      name: "ulpf-events",
+      fieldFormatMap: JSON.stringify({
+        trace_url: {
+          id: "url",
+          params: {
+            type: "a",
+            urlTemplate: "{{rawValue}}",
+            labelTemplate: "{{value}}",
+            openInNewTab: true
+          }
+        }
+      })
     }
   },
   {
@@ -24,7 +35,27 @@ const indexPatterns = [
     attributes: {
       title: "ulpf-quarantine*",
       timeFieldName: "received_at",
-      name: "ulpf-quarantine"
+      name: "ulpf-quarantine",
+      fieldFormatMap: JSON.stringify({
+        approve_url: {
+          id: "url",
+          params: {
+            type: "a",
+            urlTemplate: "{{rawValue}}",
+            labelTemplate: "{{value}}",
+            openInNewTab: true
+          }
+        },
+        reject_url: {
+          id: "url",
+          params: {
+            type: "a",
+            urlTemplate: "{{rawValue}}",
+            labelTemplate: "{{value}}",
+            openInNewTab: true
+          }
+        }
+      })
     }
   },
   {
@@ -64,7 +95,8 @@ const searches = [
         "normalized.src_endpoint.ip",
         "normalized.dst_endpoint.ip",
         "normalized.dst_endpoint.port",
-        "processing_status"
+        "processing_status",
+        "trace_url"
       ],
       sort: [["received_at", "desc"]],
       kibanaSavedObjectMeta: {
@@ -87,7 +119,9 @@ const searches = [
         "processing_status",
         "quarantine_reason",
         "structural_fingerprint",
-        "raw.immutable_payload"
+        "raw.immutable_payload",
+        "approve_url",
+        "reject_url"
       ],
       sort: [["received_at", "desc"]],
       kibanaSavedObjectMeta: {
@@ -141,7 +175,8 @@ const searches = [
         "normalized.src_endpoint.ip",
         "normalized.dst_endpoint.ip",
         "normalized.dst_endpoint.port",
-        "processing_status"
+        "processing_status",
+        "trace_url"
       ],
       sort: [["received_at", "desc"]],
       kibanaSavedObjectMeta: {
