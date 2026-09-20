@@ -24,6 +24,18 @@ function color(text, colorCode) {
   return `${colorCode}${text}${RESET}`;
 }
 
+// Strip ANSI escape codes so we can measure *visible* string length.
+// This is the root cause of the overflow bug: color("...", GREEN) adds
+// invisible bytes that were being counted against the padding width.
+function visibleLength(str) {
+  return String(str).replace(/\x1b\[[0-9;]*m/g, "").length;
+}
+
+function padVisible(str, width) {
+  const pad = Math.max(0, width - visibleLength(str));
+  return str + " ".repeat(pad);
+}
+
 function truncate(value, width) {
   const str = String(value ?? "-");
 
@@ -39,7 +51,7 @@ function printBox(title, content, width = 80) {
   const bottom = `╚${"═".repeat(width - 2)}╝`;
 
   console.log(top);
-  console.log(`║ ${color(title, BOLD + CYAN)}${" ".repeat(Math.max(0, width - title.length - 4))}║`);
+  console.log(`║ ${padVisible(color(title, BOLD + CYAN), width - 4)} ║`);
 
   for (const line of content) {
     const text = String(line);
@@ -137,40 +149,46 @@ async function selectEventInteractively() {
   return events[index].event_id;
 }
 
+// Header box now sizes itself to the longest visible line instead of
+// assuming a fixed 80-col width. This is what makes long event IDs,
+// long statuses, etc. render correctly without blowing out the border.
 function printHeader(event) {
-  const width = 80;
+  const title = "LOKI EVENT TRACE";
+  const eventId = String(event.event_id ?? "-");
+  const status = String(event.processing_status || "-");
+
+  const rows = [
+    { label: "Event ID", value: eventId, valueColor: null },
+    { label: "Status", value: status, valueColor: GREEN },
+  ];
+
+  // Compute the longest label so labels align (e.g. "Event ID" vs "Status").
+  const labelWidth = Math.max(...rows.map((r) => r.label.length));
+
+  const plainLines = [
+    title,
+    ...rows.map((r) => `${r.label.padEnd(labelWidth)} : ${r.value}`),
+  ];
+
+  const innerWidth =
+    Math.max(...plainLines.map((line) => line.length)) + 2; // 1 space padding each side
+  const width = innerWidth + 2; // + 2 border chars
+
   const line = "═".repeat(width - 2);
 
   console.log();
   console.log(`╔${line}╗`);
-  console.log(
-    `║ ${color("LOKI EVENT TRACE", BOLD + CYAN)}${" ".repeat(
-      width - 20
-    )}║`
-  );
+  console.log(`║ ${padVisible(color(title, BOLD + CYAN), width - 4)} ║`);
   console.log(`╠${line}╣`);
 
-  const eventId = String(event.event_id);
+  for (const row of rows) {
+    const plain = `${row.label.padEnd(labelWidth)} : ${row.value}`;
+    const rendered = row.valueColor
+      ? `${row.label.padEnd(labelWidth)} : ${color(row.value, row.valueColor)}`
+      : plain;
 
-  console.log(
-    `║ Event ID : ${eventId}${" ".repeat(
-      Math.max(0, width - eventId.length - 13)
-    )}║`
-  );
-
-  console.log(
-    `║ Status   : ${color(
-      event.processing_status || "-",
-      GREEN
-    )}${" ".repeat(
-      Math.max(
-        0,
-        width -
-          String(event.processing_status || "-").length -
-          13
-      )
-    )}║`
-  );
+    console.log(`║ ${padVisible(rendered, width - 4)} ║`);
+  }
 
   console.log(`╚${line}╝`);
   console.log();
@@ -299,6 +317,10 @@ function printRawLog(event) {
   console.log();
 }
 
+// Field lineage table now computes each column's width from its own
+// longest cell (with sane min/max bounds) instead of using fixed widths.
+// This fixes "extensions.vendor_fortine..." truncation for both the
+// column header and every row that shares that column.
 function printFieldLineage(event) {
   console.log(color("4. FIELD LINEAGE", BOLD + CYAN));
   console.log();
@@ -314,43 +336,49 @@ function printFieldLineage(event) {
   }
 
   const columns = [
-    {
-      name: "Normalized Field",
-      width: 28,
-    },
-    {
-      name: "Value",
-      width: 22,
-    },
-    {
-      name: "Raw Fragment",
-      width: 24,
-    },
-    {
-      name: "Mapping Rule",
-      width: 32,
-    },
+    { key: "field", name: "Normalized Field", min: 16, max: 40 },
+    { key: "value", name: "Value", min: 10, max: 40 },
+    { key: "raw", name: "Raw Fragment", min: 12, max: 40 },
+    { key: "rule", name: "Mapping Rule", min: 12, max: 48 },
   ];
+
+  const rows = entries.map(([normalizedField, item]) => {
+    const value =
+      event.normalized?.[normalizedField] ?? item.raw_fragment ?? "-";
+    const rawFragment = item.raw_fragment || "-";
+    const mappingRule = item.mapping_rule || "-";
+
+    return {
+      field: normalizedField,
+      value: String(value),
+      raw: String(rawFragment),
+      rule: String(mappingRule),
+    };
+  });
+
+  // Compute each column's width from header + all cell contents,
+  // clamped to [min, max] so one giant value can't blow out the terminal.
+  for (const column of columns) {
+    const longest = Math.max(
+      column.name.length,
+      ...rows.map((row) => row[column.key].length)
+    );
+    column.width = Math.min(column.max, Math.max(column.min, longest));
+  }
 
   const top =
     "┌" +
-    columns
-      .map((column) => "─".repeat(column.width + 2))
-      .join("┬") +
+    columns.map((column) => "─".repeat(column.width + 2)).join("┬") +
     "┐";
 
   const middle =
     "├" +
-    columns
-      .map((column) => "─".repeat(column.width + 2))
-      .join("┼") +
+    columns.map((column) => "─".repeat(column.width + 2)).join("┼") +
     "┤";
 
   const bottom =
     "└" +
-    columns
-      .map((column) => "─".repeat(column.width + 2))
-      .join("┴") +
+    columns.map((column) => "─".repeat(column.width + 2)).join("┴") +
     "┘";
 
   console.log(top);
@@ -358,37 +386,19 @@ function printFieldLineage(event) {
   console.log(
     "│" +
       columns
-        .map(
-          (column) =>
-            ` ${truncate(column.name, column.width)} `
-        )
+        .map((column) => ` ${truncate(column.name, column.width)} `)
         .join("│") +
       "│"
   );
 
   console.log(middle);
 
-  for (const [normalizedField, item] of entries) {
-    const value =
-      event.normalized?.[normalizedField] ??
-      item.raw_fragment ??
-      "-";
-
-    const rawFragment =
-      item.raw_fragment || "-";
-
-    const mappingRule =
-      item.mapping_rule || "-";
-
+  for (const row of rows) {
     console.log(
       "│" +
-        ` ${truncate(normalizedField, columns[0].width)} ` +
-        "│" +
-        ` ${truncate(value, columns[1].width)} ` +
-        "│" +
-        ` ${truncate(rawFragment, columns[2].width)} ` +
-        "│" +
-        ` ${truncate(mappingRule, columns[3].width)} ` +
+        columns
+          .map((column) => ` ${truncate(row[column.key], column.width)} `)
+          .join("│") +
         "│"
     );
   }
