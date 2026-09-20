@@ -65,5 +65,47 @@ export async function updateQuarantineAIAnalysis(eventId, aiAnalysis) {
   }
 }
 
+export async function updateQuarantineCandidateUrls(clusterId, approveUrl, rejectUrl) {
+  try {
+    console.log(`[quarantine-urls] Updating clusterId: ${clusterId}`);
+    console.log(`[quarantine-urls] approve_url: ${approveUrl}`);
+    console.log(`[quarantine-urls] reject_url: ${rejectUrl}`);
+
+    const searchRes = await client.search({
+      index: "ulpf-quarantine",
+      query: {
+        bool: {
+          should: [
+            { match: { structural_fingerprint: clusterId } },
+            { term: { "structural_fingerprint.keyword": clusterId } }
+          ]
+        }
+      }
+    });
+
+    const hits = searchRes.hits?.hits || [];
+    console.log(`[quarantine-urls] Hits found for cluster ${clusterId}: ${hits.length}`);
+
+    for (const hit of hits) {
+      console.log(`[quarantine-urls] Updating document ID: ${hit._id}`);
+      const updateRes = await client.update({
+        index: "ulpf-quarantine",
+        id: hit._id,
+        doc: {
+          approve_url: approveUrl,
+          reject_url: rejectUrl
+        },
+        refresh: true
+      });
+      console.log(`[quarantine-urls] Update result for ${hit._id}:`, updateRes.result);
+    }
+    return hits.length;
+  } catch (error) {
+    console.error(`[quarantine-urls] Error updating cluster ${clusterId}:`, error.message);
+    if (error.stack) console.error(error.stack);
+    return 0;
+  }
+}
+
 export { client };
 

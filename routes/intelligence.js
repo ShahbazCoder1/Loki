@@ -6,6 +6,7 @@ import {
   activateCandidate,
   analyzeSecurityQuestion
 } from "../modules/intelligence.js";
+import { updateQuarantineCandidateUrls } from "../modules/exporter.js";
 
 const router = express.Router();
 
@@ -19,33 +20,41 @@ function getBaseUrl() {
 
 // Helper to ensure candidates exist from available clusters if store is empty
 async function ensureCandidates() {
-  if (pendingCandidates.size > 0) return Array.from(pendingCandidates.values());
-
-  const baseUrl = getBaseUrl();
-  const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
-  for (const cluster of clusters) {
-    try {
-      const candidate = await generateCandidateParser(cluster, { timeout: 2000 });
-      const testRes = testCandidate(candidate, cluster.samples || [], []);
-      const candidate_id = candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`;
-      const candidateRecord = {
-        candidate_id,
-        cluster_id: cluster.cluster_id,
-        device_family: candidate.device_family || "Unknown Device",
-        cluster_size: cluster.count || (cluster.samples ? cluster.samples.length : 1),
-        first_seen: cluster.first_seen || new Date().toISOString(),
-        last_seen: cluster.last_seen || new Date().toISOString(),
-        approve_url: `${baseUrl}/approve/${candidate_id}`,
-        reject_url: `${baseUrl}/reject/${candidate_id}`,
-        candidate,
-        test_results: testRes,
-        status: "pending"
-      };
-      pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
-    } catch (error) {
-      console.warn(`[Intelligence] Failed to generate candidate for cluster ${cluster.cluster_id}:`, error.message);
+  if (pendingCandidates.size === 0) {
+    const baseUrl = getBaseUrl();
+    const clusters = clusterQuarantinedEvents({ useSampleFallbacks: true });
+    for (const cluster of clusters) {
+      try {
+        const candidate = await generateCandidateParser(cluster, { timeout: 2000 });
+        const testRes = testCandidate(candidate, cluster.samples || [], []);
+        const candidate_id = candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`;
+        const candidateRecord = {
+          candidate_id,
+          cluster_id: cluster.cluster_id,
+          device_family: candidate.device_family || "Unknown Device",
+          cluster_size: cluster.count || (cluster.samples ? cluster.samples.length : 1),
+          first_seen: cluster.first_seen || new Date().toISOString(),
+          last_seen: cluster.last_seen || new Date().toISOString(),
+          approve_url: `${baseUrl}/approve/${candidate_id}`,
+          reject_url: `${baseUrl}/reject/${candidate_id}`,
+          candidate,
+          test_results: testRes,
+          status: "pending"
+        };
+        pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
+      } catch (error) {
+        console.warn(`[Intelligence] Failed to generate candidate for cluster ${cluster.cluster_id}:`, error.message);
+      }
     }
   }
+
+  // Ensure Elasticsearch quarantine documents are updated for all candidates in store
+  for (const candRecord of pendingCandidates.values()) {
+    if (candRecord.cluster_id && candRecord.approve_url && candRecord.reject_url) {
+      await updateQuarantineCandidateUrls(candRecord.cluster_id, candRecord.approve_url, candRecord.reject_url);
+    }
+  }
+
   return Array.from(pendingCandidates.values());
 }
 
@@ -158,6 +167,7 @@ router.post("/generate", async (req, res) => {
     };
 
     pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
+    updateQuarantineCandidateUrls(targetCluster.cluster_id, candidateRecord.approve_url, candidateRecord.reject_url).catch(() => {});
 
     return res.json({
       status: "generated",
