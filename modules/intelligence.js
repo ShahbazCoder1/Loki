@@ -186,7 +186,7 @@ export async function clusterQuarantinedEvents(options = {}) {
  */
 export async function generateCandidateParser(cluster, options = {}) {
   const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
-  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e4b";
+  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e2b";
   const samples = cluster.samples || [cluster.template];
 
   const prompt = `You are a log parsing expert. Analyze these perimeter security log samples from the same source device and generate a parser definition.
@@ -503,7 +503,7 @@ export async function analyzeSecurityQuestion(question, options = {}) {
   }
 
   const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
-  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e4b";
+  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e2b";
   const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 120000;
 
   const systemContext = options.context || "Universal Log Pre-processing Framework (ULPF) Security Operations Center";
@@ -579,7 +579,7 @@ export async function analyzeQuarantinedLog(rawLog, options = {}) {
   }
 
   const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
-  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e4b";
+  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e2b";
   const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 120000;
 
   const prompt = `Analyze this raw unparsed security log payload and provide a JSON response.
@@ -653,7 +653,7 @@ JSON keys required:
  */
 export async function warmupOllamaModel(options = {}) {
   const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
-  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e4b";
+  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e2b";
 
   try {
     const controller = new AbortController();
