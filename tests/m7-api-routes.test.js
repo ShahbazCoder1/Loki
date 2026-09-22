@@ -229,7 +229,7 @@ test("GET /trace/:event_id returns public/trace.html", async () => {
   assert.equal(response.status, 200);
   assert.ok(response.headers.get("content-type")?.includes("text/html"));
   const html = await response.text();
-  assert.ok(html.includes("<title>ULPF Event Trace</title>"));
+  assert.ok(html.includes("<title>Loki Event Trace</title>"));
 });
 
 test("GET /review/:cluster_id returns public/cluster-review.html", async () => {
@@ -237,7 +237,7 @@ test("GET /review/:cluster_id returns public/cluster-review.html", async () => {
   assert.equal(response.status, 200);
   assert.ok(response.headers.get("content-type")?.includes("text/html"));
   const html = await response.text();
-  assert.ok(html.includes("<title>ULPF Parser Action</title>"));
+  assert.ok(html.includes("<title>Loki Parser Action</title>"));
 });
 
 test("POST /api/logs validates input and returns clean JSON errors", async () => {
