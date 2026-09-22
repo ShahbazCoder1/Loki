@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const KIBANA_URL = process.env.KIBANA_URL || "http://127.0.0.1:5601";
+const KIBANA_URL = process.env.KIBANA_URL;
 
 // 1. Data Views (Index Patterns)
 const indexPatterns = [

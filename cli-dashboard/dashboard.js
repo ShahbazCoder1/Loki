@@ -3,7 +3,7 @@ import contrib from "blessed-contrib";
 import { EventSource } from "eventsource";
 
 const SERVER_URL =
-    process.env.ULPF_SERVER_URL || "http://localhost:3000";
+    process.env.ULPF_SERVER_URL;
 
 const screen = blessed.screen({
     smartCSR: true,

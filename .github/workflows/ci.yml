@@ -28,5 +28,12 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Create fallback .env
+        run: |
+          echo "ELASTICSEARCH_URL=http://localhost:9200" > .env
+          echo "ULPF_LOG_API_URL=http://localhost:3000/api/logs" >> .env
+          echo "ULPF_SERVER_URL=http://localhost:3000" >> .env
+          echo "ULPF_API_URL=http://localhost:3000" >> .env
+
       - name: Run Test Suite
         run: npm test

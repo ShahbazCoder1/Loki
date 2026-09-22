@@ -1,8 +1,8 @@
 import { Client } from "@elastic/elasticsearch";
 
 const client = new Client({
-  node: process.env.ELASTICSEARCH_URL || "http://localhost:9200",
-  requestTimeout: Number(process.env.ELASTICSEARCH_REQUEST_TIMEOUT_MS || 3000),
+  node: process.env.ELASTICSEARCH_URL,
+  requestTimeout: Number(process.env.ELASTICSEARCH_REQUEST_TIMEOUT_MS),
   maxRetries: 0
 });
 

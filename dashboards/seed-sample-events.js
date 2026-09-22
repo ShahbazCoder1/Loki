@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-const API_URL = process.env.ULPF_API_URL || "http://127.0.0.1:3000/api/logs";
+const API_URL = process.env.ULPF_LOG_API_URL;
 
 const SAMPLE_LOGS = [
   // Valid Cisco ASA Logs
