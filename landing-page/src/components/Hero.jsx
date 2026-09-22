@@ -2,7 +2,7 @@ import React from 'react';
 import CopyButton from './CopyButton';
 
 export default function Hero() {
-  const codeCommand = "git clone https://github.com/ShahbazCoder1/SIH-26156.git && cd SIH-26156 && docker compose up";
+  const codeCommand = "git clone https://github.com/ShahbazCoder1/Loki.git && cd Loki && docker compose up";
 
   return (
     <header className="hero">
