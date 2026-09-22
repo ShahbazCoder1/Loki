@@ -443,6 +443,41 @@
       border-color: #593b3e;
       color: #f5a3a3;
     }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background-color: var(--status-success-bg);
+      border: 1px solid var(--status-success-border);
+      color: var(--status-success-text);
+      padding: 0.65rem 1.1rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: auto;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -735,6 +770,32 @@
       });
     }
 
+    function showToast(message, duration = 3500) {
+      let container = document.getElementById("toast-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.className = "toast-container";
+        container.id = "toast-container";
+        document.body.appendChild(container);
+      }
+
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.innerHTML = `<span>✓</span> <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.add("show");
+      });
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+        toast.addEventListener("transitionend", () => {
+          toast.remove();
+        });
+      }, duration);
+    }
+
     // 4. Confirmation action handler
     async function executeAction(clusterId, action) {
       const approveBtn = document.getElementById("approve-btn");
@@ -779,6 +840,7 @@
               <span>Parser '<strong>${escapeHtml(data.parser_id || clusterId)}</strong>' has been approved and activated! Hot-reload completed.</span>
             </div>
           `;
+          showToast("Parser approved and activated successfully.");
         } else {
           rejectBtn.textContent = "Rejected";
           banner.innerHTML = `
