@@ -223,7 +223,7 @@ export async function processLogPipeline(rawLogOrEnvelope, options = {}) {
     normResult
   );
 
-  const baseUrl = (process.env.ULPF_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
+  const baseUrl = (process.env.ULPF_BASE_URL).replace(/\/+$/, "");
   completeEvent.trace_url = `${baseUrl}/trace/${completeEvent.event_id}`;
 
   addProvenance(completeEvent, "export", "elasticsearch-exporter", "1.0", "success", {

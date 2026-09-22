@@ -25,10 +25,19 @@ import datetime
 import urllib.request
 import urllib.error
 
+# Load .env manually since python-dotenv is not guaranteed to be installed
+env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+if os.path.exists(env_path):
+    with open(env_path, "r") as f:
+        for line in f:
+            if line.strip() and not line.startswith("#"):
+                key, val = line.strip().split("=", 1)
+                os.environ.setdefault(key, val)
+
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-API_URL = os.environ.get("ULPF_API_URL", "http://localhost:3000/api/logs")
+API_URL = os.environ.get("ULPF_LOG_API_URL")
 # Terminal Color Codes
 class Colors:
     HEADER = "\033[95m"

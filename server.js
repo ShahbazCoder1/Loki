@@ -51,7 +51,7 @@ export function createApp({ esClient = client, parsersDir } = {}) {
   return app;
 }
 
-export function startServer({ port = Number(process.env.PORT || 3000) } = {}) {
+export function startServer({ port = Number(process.env.PORT) } = {}) {
   startWatcher();
   warmupOllamaModel().catch(() => {});
   return createApp().listen(port, () => {

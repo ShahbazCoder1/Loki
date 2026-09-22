@@ -5,12 +5,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "test": "node --test tests/*.test.js",
-    "setup-indices": "node scripts/setup-indices.js",
-    "seed-data": "node dashboards/seed-sample-events.js",
-    "setup-dashboard": "node dashboards/setup-kibana-dashboard.js"
+    "start": "node --env-file=.env server.js",
+    "dev": "node --env-file=.env server.js",
+    "test": "node --env-file=.env --test tests/*.test.js",
+    "setup-indices": "node --env-file=.env scripts/setup-indices.js",
+    "seed-data": "node --env-file=.env dashboards/seed-sample-events.js",
+    "setup-dashboard": "node --env-file=.env dashboards/setup-kibana-dashboard.js"
   },
   "keywords": [],
   "author": "",

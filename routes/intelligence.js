@@ -46,7 +46,7 @@ router.get("/review/:cluster_id", async (req, res) => {
     }
 
     const candidate = await generateCandidateParser(cluster, {
-      timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 300000
+      timeout: Number(process.env.OLLAMA_TIMEOUT_MS)
     });
     const testRes = testCandidate(candidate, cluster.samples || [], []);
 
@@ -133,7 +133,7 @@ router.post("/generate", async (req, res) => {
     }
 
     const candidate = await generateCandidateParser(targetCluster, {
-      timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 300000,
+      timeout: Number(process.env.OLLAMA_TIMEOUT_MS),
       ...options
     });
     const testResults = testCandidate(candidate, targetCluster.samples || candidate.samples || [], []);

@@ -185,8 +185,8 @@ export async function clusterQuarantinedEvents(options = {}) {
  * @throws {Error} Error with `ollama_status` ("offline" | "timeout" | "error" | "invalid_response" | "invalid_schema" | "test_failed")
  */
 export async function generateCandidateParser(cluster, options = {}) {
-  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
-  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e2b";
+  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL;
+  const model = options.model || process.env.OLLAMA_MODEL;
   const samples = cluster.samples || [cluster.template];
 
   const prompt = `You are a log parsing expert. Analyze these perimeter security log samples from the same source device and generate a parser definition.
@@ -244,7 +244,7 @@ CRITICAL RULES:
 - Return ONLY valid JSON. No markdown formatting, no code fences, no extra text.`;
 
   const controller = new AbortController();
-  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 300000;
+  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS);
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   let response;
@@ -502,9 +502,9 @@ export async function analyzeSecurityQuestion(question, options = {}) {
     throw new Error("Question parameter is required and cannot be empty.");
   }
 
-  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
-  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e2b";
-  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 120000;
+  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL;
+  const model = options.model || process.env.OLLAMA_MODEL;
+  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS);
 
   const systemContext = options.context || "Universal Log Pre-processing Framework (ULPF) Security Operations Center";
 
@@ -578,9 +578,9 @@ export async function analyzeQuarantinedLog(rawLog, options = {}) {
     };
   }
 
-  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
-  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e2b";
-  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 120000;
+  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL;
+  const model = options.model || process.env.OLLAMA_MODEL;
+  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS);
 
   const prompt = `Analyze this raw unparsed security log payload and provide a JSON response.
 
@@ -624,7 +624,7 @@ JSON keys required:
         detected_type: parsed.detected_type || "Unknown Security Log",
         security_meaning: parsed.security_meaning || "Unrecognized security payload",
         severity_assessment: (parsed.severity_assessment || "medium").toLowerCase(),
-        suspicious_indicators: parsed.suspicious_indicators || "None identified",
+        suspicious_indicators: typeof parsed.suspicious_indicators === 'object' ? JSON.stringify(parsed.suspicious_indicators) : String(parsed.suspicious_indicators || "None identified"),
         recommended_action: parsed.recommended_action || "Investigate log payload",
         extracted_fields: parsed.extracted_fields || {},
         model,
@@ -652,8 +652,8 @@ JSON keys required:
  * Keeps model resident in memory for 30 minutes so subsequent requests respond instantly.
  */
 export async function warmupOllamaModel(options = {}) {
-  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
-  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e2b";
+  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL;
+  const model = options.model || process.env.OLLAMA_MODEL;
 
   try {
     const controller = new AbortController();

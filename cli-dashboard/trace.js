@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import readline from "readline";
 
-const API_BASE = process.env.ULPF_API_URL || "http://localhost:3000";
+const API_BASE = process.env.ULPF_API_URL;
 
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
