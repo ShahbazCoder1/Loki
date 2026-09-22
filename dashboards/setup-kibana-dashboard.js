@@ -37,21 +37,12 @@ const indexPatterns = [
       timeFieldName: "received_at",
       name: "ulpf-quarantine",
       fieldFormatMap: JSON.stringify({
-        approve_url: {
+        structural_fingerprint: {
           id: "url",
           params: {
             type: "a",
-            urlTemplate: "{{rawValue}}",
-            labelTemplate: "{{value}}",
-            openInNewTab: true
-          }
-        },
-        reject_url: {
-          id: "url",
-          params: {
-            type: "a",
-            urlTemplate: "{{rawValue}}",
-            labelTemplate: "{{value}}",
+            urlTemplate: "http://localhost:3000/review/{{rawValue}}",
+            labelTemplate: "Review",
             openInNewTab: true
           }
         }
@@ -119,9 +110,7 @@ const searches = [
         "processing_status",
         "quarantine_reason",
         "structural_fingerprint",
-        "raw.immutable_payload",
-        "approve_url",
-        "reject_url"
+        "raw.immutable_payload"
       ],
       sort: [["received_at", "desc"]],
       kibanaSavedObjectMeta: {
@@ -539,8 +528,6 @@ const visualizations = [
         type: "table",
         aggs: [
           { id: "1", enabled: true, type: "count", schema: "metric", params: { customLabel: "Event Count" } },
-          { id: "2", enabled: true, type: "min", schema: "metric", params: { field: "received_at", customLabel: "First Seen" } },
-          { id: "3", enabled: true, type: "max", schema: "metric", params: { field: "received_at", customLabel: "Last Seen" } },
           { id: "4", enabled: true, type: "terms", schema: "bucket", params: { field: "structural_fingerprint.keyword", size: 20, order: "desc", orderBy: "1" } }
         ]
       }),
