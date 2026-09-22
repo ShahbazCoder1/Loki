@@ -172,11 +172,48 @@ test("Intelligence Routes - POST /api/intelligence/generate returns 503 when Oll
 });
 
 test("Intelligence Routes - GET /api/intelligence/candidates and /candidates/:candidate_id", async () => {
+  const mockOllama = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      response: JSON.stringify({
+        parser_id: "candidate_get_test_v1.0",
+        version: "1.0",
+        device_family: "Test Device",
+        description: "Test Parser",
+        detection: {
+          signatures: ["TEST_SIG:"],
+          structure: "syslog_text",
+          keywords: ["TEST_SIG:"]
+        },
+        extraction_rules: [
+          { field: "src_ip", regex: "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})" }
+        ],
+        required_fields: ["src_ip"],
+        normalization_mapping: {
+          src_ip: "src_endpoint.ip"
+        }
+      })
+    }));
+  });
+
+  await new Promise(resolve => mockOllama.listen(0, resolve));
+  const mockPort = mockOllama.address().port;
+
   const app = createTestApp();
   const server = app.listen(0);
   const port = server.address().port;
 
   try {
+    // Generate a candidate into pending store first
+    await fetch(`http://127.0.0.1:${port}/api/intelligence/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        samples: ["TEST_SIG: log from 10.0.0.1"],
+        options: { ollamaUrl: `http://127.0.0.1:${mockPort}/api/generate` }
+      })
+    });
+
     const resList = await fetch(`http://127.0.0.1:${port}/api/intelligence/candidates`);
     assert.equal(resList.status, 200);
     const listData = await resList.json();
@@ -205,6 +242,7 @@ test("Intelligence Routes - GET /api/intelligence/candidates and /candidates/:ca
     assert.equal(data404.error, "Candidate not found");
   } finally {
     server.close();
+    mockOllama.close();
   }
 });
 

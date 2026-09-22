@@ -20,6 +20,10 @@ function getBaseUrl() {
 
 // Helper to ensure candidates exist from available clusters if store is empty
 async function ensureCandidates() {
+  if (pendingCandidates.size > 0) {
+    return Array.from(pendingCandidates.values());
+  }
+
   const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
   const existingClusterIds = new Set(Array.from(pendingCandidates.values()).map(c => c.cluster_id));
   const unhandledClusters = clusters.filter(c => c.cluster_id && !existingClusterIds.has(c.cluster_id));
@@ -34,7 +38,7 @@ async function ensureCandidates() {
     const cluster = unhandledClusters[0];
     const baseUrl = getBaseUrl();
     try {
-      const candidate = await generateCandidateParser(cluster, { timeout: 30000 });
+      const candidate = await generateCandidateParser(cluster, { timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 120000 });
       const testRes = testCandidate(candidate, cluster.samples || [], []);
       const candidate_id = candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`;
       const candidateRecord = {
@@ -154,7 +158,10 @@ router.post("/generate", async (req, res) => {
       });
     }
 
-    const candidate = await generateCandidateParser(targetCluster, { timeout: 30000, ...options });
+    const candidate = await generateCandidateParser(targetCluster, {
+      timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 120000,
+      ...options
+    });
     const testResults = testCandidate(candidate, targetCluster.samples || candidate.samples || [], []);
 
     const baseUrl = getBaseUrl();

@@ -12,6 +12,7 @@ import { createQuarantineRouter } from "./routes/quarantine.js";
 import { client } from "./modules/exporter.js";
 import { startWatcher } from "./modules/parser-manager.js";
 import { createStreamRouter } from "./routes/stream.js";
+import { warmupOllamaModel } from "./modules/intelligence.js";
 
 export function createApp({ esClient = client, parsersDir } = {}) {
   const app = express();
@@ -56,6 +57,7 @@ export function createApp({ esClient = client, parsersDir } = {}) {
 
 export function startServer({ port = Number(process.env.PORT || 3000) } = {}) {
   startWatcher();
+  warmupOllamaModel().catch(() => {});
   return createApp().listen(port, () => {
     console.log(`ULPF Prototype running on http://localhost:${port}`);
   });

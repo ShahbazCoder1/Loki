@@ -185,8 +185,8 @@ export async function clusterQuarantinedEvents(options = {}) {
  * @throws {Error} Error with `ollama_status` ("offline" | "timeout" | "error" | "invalid_response" | "invalid_schema" | "test_failed")
  */
 export async function generateCandidateParser(cluster, options = {}) {
-  const ollamaUrl = options.ollamaUrl || "http://localhost:11434/api/generate";
-  const model = options.model || "gemma4:e2b";
+  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
+  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e4b";
   const samples = cluster.samples || [cluster.template];
 
   const prompt = `You are a log parsing expert. Analyze these perimeter security log samples from the same source device and generate a parser definition.
@@ -244,7 +244,7 @@ CRITICAL RULES:
 - Return ONLY valid JSON. No markdown formatting, no code fences, no extra text.`;
 
   const controller = new AbortController();
-  const timeoutMs = options.timeout || 30000;
+  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 120000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   let response;
@@ -256,13 +256,17 @@ CRITICAL RULES:
         model,
         prompt,
         stream: false,
-        format: "json"
+        format: "json",
+        options: {
+          temperature: 0.1,
+          num_predict: options.num_predict || 512
+        }
       }),
       signal: controller.signal
     });
   } catch (err) {
     if (err.name === "AbortError") {
-      const abortErr = new Error(`Ollama request timed out after ${timeoutMs}ms. The model may be loading or the machine lacks resources.`);
+      const abortErr = new Error(`Ollama request timed out after ${timeoutMs}ms. The model may be loading or the machine lacks resources. You can increase this by setting OLLAMA_TIMEOUT_MS.`);
       abortErr.ollama_status = "timeout";
       throw abortErr;
     }
@@ -498,9 +502,9 @@ export async function analyzeSecurityQuestion(question, options = {}) {
     throw new Error("Question parameter is required and cannot be empty.");
   }
 
-  const ollamaUrl = options.ollamaUrl || "http://localhost:11434/api/generate";
-  const model = options.model || "gemma4:e2b";
-  const timeoutMs = options.timeout || 120000;
+  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
+  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e4b";
+  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 120000;
 
   const systemContext = options.context || "Universal Log Pre-processing Framework (ULPF) Security Operations Center";
 
@@ -521,7 +525,11 @@ Provide a concise, practical, and clear technical analysis or answer. Use clean 
       body: JSON.stringify({
         model,
         prompt,
-        stream: false
+        stream: false,
+        options: {
+          temperature: 0.2,
+          num_predict: options.num_predict || 256
+        }
       }),
       signal: controller.signal
     });
@@ -570,9 +578,9 @@ export async function analyzeQuarantinedLog(rawLog, options = {}) {
     };
   }
 
-  const ollamaUrl = options.ollamaUrl || "http://localhost:11434/api/generate";
-  const model = options.model || "gemma4:e2b";
-  const timeoutMs = options.timeout || 90000;
+  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
+  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e4b";
+  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 120000;
 
   const prompt = `Analyze this raw unparsed security log payload and provide a JSON response.
 
@@ -639,4 +647,41 @@ JSON keys required:
   };
 }
 
+/**
+ * Background warm-up helper: Preloads the Ollama model into memory on server boot.
+ * Keeps model resident in memory for 30 minutes so subsequent requests respond instantly.
+ */
+export async function warmupOllamaModel(options = {}) {
+  const ollamaUrl = options.ollamaUrl || process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
+  const model = options.model || process.env.OLLAMA_MODEL || "gemma4:e4b";
 
+  try {
+    const controller = new AbortController();
+    const checkTimeout = setTimeout(() => controller.abort(), 3000);
+    const tagsUrl = ollamaUrl.replace(/\/api\/generate\/?$/, "/api/tags");
+    const res = await fetch(tagsUrl, { signal: controller.signal });
+    clearTimeout(checkTimeout);
+
+    if (!res.ok) return false;
+    const data = await res.json();
+    const modelNames = (data.models || []).map(m => m.name);
+    const hasModel = modelNames.some(m => m === model || m.startsWith(model.split(":")[0]));
+    if (!hasModel) return false;
+
+    console.log(`[Intelligence] Pre-warming Ollama model '${model}' in background...`);
+    fetch(ollamaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        keep_alive: "30m"
+      })
+    }).then(() => {
+      console.log(`[Intelligence] Model '${model}' pre-warmed and resident in memory.`);
+    }).catch(() => {});
+
+    return true;
+  } catch (_) {
+    return false;
+  }
+}

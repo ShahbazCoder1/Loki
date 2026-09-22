@@ -73,6 +73,7 @@ export async function updateQuarantineCandidateUrls(clusterId, approveUrl, rejec
 
     const searchRes = await client.search({
       index: "ulpf-quarantine",
+      size: 1000,
       query: {
         bool: {
           should: [
