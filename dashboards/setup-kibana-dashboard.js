@@ -40,6 +40,7 @@ const indexPatterns = [
         {
           name: "review_url",
           type: "string",
+          scripted: true,
           script: "if (doc.containsKey('structural_fingerprint.keyword') && !doc['structural_fingerprint.keyword'].empty) { return doc['structural_fingerprint.keyword'].value; } return '';",
           lang: "painless"
         }
@@ -536,8 +537,8 @@ const visualizations = [
         type: "table",
         aggs: [
           { id: "1", enabled: true, type: "count", schema: "metric", params: { customLabel: "Event Count" } },
-          { id: "5", enabled: true, type: "top_hits", schema: "metric", params: { field: "review_url", aggregate: "concat", size: 1, sortField: "received_at", sortOrder: "desc", customLabel: "Action" } },
-          { id: "4", enabled: true, type: "terms", schema: "bucket", params: { field: "structural_fingerprint.keyword", size: 20, order: "desc", orderBy: "1", customLabel: "Cluster Fingerprint" } }
+          { id: "4", enabled: true, type: "terms", schema: "bucket", params: { field: "structural_fingerprint.keyword", size: 20, order: "desc", orderBy: "1", customLabel: "Cluster Fingerprint" } },
+          { id: "5", enabled: true, type: "terms", schema: "bucket", params: { field: "review_url", size: 1, order: "desc", orderBy: "1", customLabel: "Action" } }
         ]
       }),
       uiStateJSON: "{}",
