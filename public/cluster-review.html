@@ -356,6 +356,81 @@
       max-width: 480px;
       margin: 0 auto 1.25rem;
     }
+
+    /* Confirmation Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      max-width: 360px;
+      width: 90%;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    .modal-header {
+      padding: 0;
+      background-color: transparent;
+    }
+
+    .modal-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .modal-body {
+      padding: 0;
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      padding-top: 0.35rem;
+      background-color: transparent;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+    }
+
+    .btn-modal-approve {
+      background-color: #1e2d24;
+      border: 1px solid #2e4436;
+      color: #6edc8c;
+    }
+
+    .btn-modal-approve:hover:not(:disabled) {
+      background-color: #23382c;
+      border-color: #3b5945;
+      color: #82e49d;
+    }
   </style>
 </head>
 <body>
@@ -378,6 +453,22 @@
       <div class="state-desc" id="loading-desc">Fetching parser candidate record from Loki intelligence backend...</div>
     </div>
   </main>
+
+  <!-- Confirmation Modal -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Approval</span>
+      </div>
+      <div class="modal-body">
+        Approve and activate this parser?
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn btn-modal-approve" id="modal-ok-btn">Approve</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     function escapeHtml(str) {
@@ -594,6 +685,34 @@
       `;
     }
 
+    function showConfirmModal() {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("confirm-modal");
+        const okBtn = document.getElementById("modal-ok-btn");
+        const cancelBtn = document.getElementById("modal-cancel-btn");
+
+        function cleanup() {
+          modal.classList.remove("active");
+          okBtn.removeEventListener("click", onOk);
+          cancelBtn.removeEventListener("click", onCancel);
+        }
+
+        function onOk() {
+          cleanup();
+          resolve(true);
+        }
+
+        function onCancel() {
+          cleanup();
+          resolve(false);
+        }
+
+        okBtn.addEventListener("click", onOk);
+        cancelBtn.addEventListener("click", onCancel);
+        modal.classList.add("active");
+      });
+    }
+
     // 4. Confirmation action handler
     async function executeAction(clusterId, action) {
       const approveBtn = document.getElementById("approve-btn");
@@ -603,7 +722,7 @@
       if (!approveBtn || approveBtn.disabled || !rejectBtn || rejectBtn.disabled) return;
 
       if (action === "approve") {
-        const confirmed = window.confirm("Are you sure you want to approve and activate this parser?");
+        const confirmed = await showConfirmModal();
         if (!confirmed) return;
       }
 
