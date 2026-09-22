@@ -36,8 +36,16 @@ const indexPatterns = [
       title: "ulpf-quarantine*",
       timeFieldName: "received_at",
       name: "ulpf-quarantine",
+      fields: JSON.stringify([
+        {
+          name: "review_url",
+          type: "string",
+          script: "if (doc.containsKey('structural_fingerprint.keyword') && !doc['structural_fingerprint.keyword'].empty) { return doc['structural_fingerprint.keyword'].value; } return '';",
+          lang: "painless"
+        }
+      ]),
       fieldFormatMap: JSON.stringify({
-        structural_fingerprint: {
+        review_url: {
           id: "url",
           params: {
             type: "a",
@@ -528,7 +536,8 @@ const visualizations = [
         type: "table",
         aggs: [
           { id: "1", enabled: true, type: "count", schema: "metric", params: { customLabel: "Event Count" } },
-          { id: "4", enabled: true, type: "terms", schema: "bucket", params: { field: "structural_fingerprint.keyword", size: 20, order: "desc", orderBy: "1" } }
+          { id: "5", enabled: true, type: "top_hits", schema: "metric", params: { field: "review_url", aggregate: "concat", size: 1, sortField: "received_at", sortOrder: "desc", customLabel: "Action" } },
+          { id: "4", enabled: true, type: "terms", schema: "bucket", params: { field: "structural_fingerprint.keyword", size: 20, order: "desc", orderBy: "1", customLabel: "Cluster Fingerprint" } }
         ]
       }),
       uiStateJSON: "{}",

@@ -244,7 +244,7 @@ CRITICAL RULES:
 - Return ONLY valid JSON. No markdown formatting, no code fences, no extra text.`;
 
   const controller = new AbortController();
-  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 120000;
+  const timeoutMs = options.timeout || Number(process.env.OLLAMA_TIMEOUT_MS) || 300000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   let response;
