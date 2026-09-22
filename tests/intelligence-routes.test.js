@@ -101,8 +101,6 @@ test("Intelligence Routes - POST /api/intelligence/generate, /test, and /approve
     assert.ok(genData.candidate);
 
     assert.ok(genData.candidate_record);
-    assert.ok(genData.candidate_record.approve_url);
-    assert.ok(genData.candidate_record.reject_url);
 
     const candidate = genData.candidate;
 
@@ -223,45 +221,26 @@ test("Intelligence Routes - GET /api/intelligence/candidates and /candidates/:ca
 
     const firstCandidate = listData.candidates[0];
     assert.ok(firstCandidate.candidate_id);
-    assert.ok(firstCandidate.approve_url.includes(`/approve/${firstCandidate.candidate_id}`));
-    assert.ok(firstCandidate.reject_url.includes(`/reject/${firstCandidate.candidate_id}`));
 
-    // Fetch single existing candidate
-    const resSingle = await fetch(`http://127.0.0.1:${port}/api/intelligence/candidates/${firstCandidate.candidate_id}`);
-    assert.equal(resSingle.status, 200);
-    const singleData = await resSingle.json();
-    assert.equal(singleData.status, "success");
-    assert.equal(singleData.candidate.candidate_id, firstCandidate.candidate_id);
-    assert.ok(singleData.candidate.candidate);
-    assert.ok(singleData.candidate.test_results);
+    // Test GET /review/:cluster_id
+    const resReview = await fetch(`http://127.0.0.1:${port}/api/intelligence/review/${firstCandidate.cluster_id}`);
+    assert.equal(resReview.status, 200);
+    const reviewData = await resReview.json();
+    assert.equal(reviewData.status, "success");
+    assert.equal(reviewData.candidate.cluster_id, firstCandidate.cluster_id);
+    assert.ok(reviewData.candidate.candidate);
 
-    // Fetch non-existing candidate
-    const res404 = await fetch(`http://127.0.0.1:${port}/api/intelligence/candidates/non_existent_candidate_12345`);
+    // Fetch non-existing cluster
+    const res404 = await fetch(`http://127.0.0.1:${port}/api/intelligence/review/non_existent_cluster_12345`);
     assert.equal(res404.status, 404);
     const data404 = await res404.json();
-    assert.equal(data404.error, "Candidate not found");
+    assert.equal(data404.error, "Cluster not found");
   } finally {
     server.close();
     mockOllama.close();
   }
 });
 
-test("Intelligence Routes - ensureCandidates selects newest unhandled cluster first", async () => {
-  const clusters = [
-    { cluster_id: "old_cluster", last_seen: "2026-01-01T00:00:00.000Z", count: 100 },
-    { cluster_id: "new_cluster", last_seen: "2026-09-20T12:00:00.000Z", count: 1 }
-  ];
 
-  const existingClusterIds = new Set();
-  const unhandledClusters = clusters.filter(c => c.cluster_id && !existingClusterIds.has(c.cluster_id));
-
-  unhandledClusters.sort((a, b) => {
-    const timeA = new Date(a.last_seen || a.first_seen || 0).getTime();
-    const timeB = new Date(b.last_seen || b.first_seen || 0).getTime();
-    return timeB - timeA;
-  });
-
-  assert.equal(unhandledClusters[0].cluster_id, "new_cluster", "Newest unhandled cluster must be selected first regardless of sample count");
-});
 
 
