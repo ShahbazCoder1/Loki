@@ -1,7 +1,7 @@
 # Loki
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/38d9935c-41f3-47d7-9762-d7469e297050" alt="Loki logo" width="220" />
+  <img src="public/Loki.png" alt="Loki logo" width="220" />
 </div>
 
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
@@ -9,7 +9,7 @@
 [![Express](https://img.shields.io/badge/Framework-Express-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![Elasticsearch](https://img.shields.io/badge/Data-Elastic-005571?logo=elasticsearch&logoColor=white)](https://www.elastic.co/elasticsearch/)
 
-Loki is a Unified Log Processing Framework (ULPF) for ingesting, parsing, normalizing, validating, enriching, and monitoring security and infrastructure logs.
+Loki is a Unified Log Processing Framework for ingesting, parsing, normalizing, validating, enriching, and monitoring security and infrastructure logs.
 
 It provides a Node.js/Express API, YAML-based parser definitions, Elasticsearch persistence, Kibana dashboards, a terminal dashboard, a Python log simulator, quarantine handling, and dead-letter processing for operational telemetry.
 
@@ -75,3 +75,141 @@ Elasticsearch Export
    ├── Field Lineage API
    ├── Kibana Dashboards
    └── Server-Sent Events Stream
+```
+
+---
+
+## Getting Started
+
+Since Docker Desktop is running on your machine, you can spin up the entire stack with a few commands.
+
+---
+
+### Architecture & Port Mapping
+
+| Component | Technology | URL / Command | Port |
+|---|---|---|---|
+| **Database** | Elasticsearch 8.15 | `http://localhost:9200` | `9200` |
+| **Web Dashboard** | Kibana 8.15 | `http://localhost:5601` | `5601` |
+| **Loki Server** | Node.js Express | `http://localhost:3000` | `3000` |
+| **Terminal TUI** | blessed-contrib | `node cli-dashboard/dashboard.js` | Terminal |
+| **Log Generator** | Python 3 | `python log-simulator/simulator.py` | Terminal |
+
+---
+
+### Step 1: Start Elasticsearch & Kibana (Docker)
+
+In your project root, open PowerShell:
+
+```powershell
+docker compose up -d
+```
+
+> **Note**: This starts `loki-elasticsearch` and `loki-kibana` in the background. The first time you run this, Docker will download the images (~600MB). Wait about **30–45 seconds** for Elasticsearch to finish initializing.
+
+Verify both containers are running:
+```powershell
+docker ps
+```
+You should see both `loki-elasticsearch` and `loki-kibana` with status `Up`.
+
+---
+
+### Step 2: Initialize Elasticsearch Indices & Kibana Dashboards
+
+Install any missing npm packages and run the setup scripts:
+
+```powershell
+# 1. Install dependencies
+npm install
+
+# 2. Create the Elasticsearch indices (ulpf-events, ulpf-quarantine, ulpf-deadletter)
+npm run setup-indices
+
+# 3. Auto-configure Kibana data views, saved searches, and dashboards
+npm run setup-dashboard
+
+# 4. (Optional) Seed sample baseline events into Elasticsearch
+npm run seed-data
+```
+
+---
+
+### Step 3: Start the Loki Framework Server (Terminal 1)
+
+Open **Terminal 1** and start the Node.js server:
+
+```powershell
+npm start
+```
+You will see:
+```text
+Loki Prototype running on http://localhost:3000
+Watcher started on parsers directory
+```
+
+You can verify the system health in your browser at `http://localhost:3000/api/health`.
+
+---
+
+### Step 4: Open the Terminal Dashboard (TUI) (Terminal 2)
+
+Open a **second terminal** and launch the live terminal dashboard:
+
+```powershell
+node cli-dashboard/dashboard.js
+```
+This renders the real-time hacker terminal dashboard with:
+- **Live Event Feed** (scrolling table of parsed OCSF events)
+- **Throughput Gauge** (events/second)
+- **Source Distribution** (Cisco ASA / Fortinet / CEF / Unknown)
+- **Status Breakdown** (Exported / Quarantined / Dead-Letter)
+- **System Telemetry**
+
+*(Press `q` or `Esc` anytime to exit)*
+
+---
+
+### Step 5: Start the Log Simulator (Terminal 3)
+
+Open a **third terminal** and start streaming logs into the framework:
+
+```powershell
+python log-simulator/simulator.py
+```
+This streams mixed synthetic logs + real laptop logs (`wevtutil System` events) into the framework every second.
+
+You will immediately see:
+1. Logs being ingested and parsed in **Terminal 1 (Server)**
+2. Live metrics, gauges, and tables updating in **Terminal 2 (TUI Dashboard)**
+3. Live colored stream status in **Terminal 3 (Simulator)**
+
+---
+
+### Step 6: View the Kibana Dashboard in Your Browser
+
+Open your web browser and go to:
+```
+http://localhost:5601
+```
+
+1. Navigate to **Analytics** ➔ **Dashboard**.
+2. Click on **Loki - Security Overview** (or any of the 3 sub-dashboards: *Security Overview*, *Quarantine & Intelligence*, or *Event Inspector*).
+3. Set the time range to **Today** or **Last 15 minutes** with **Auto-refresh: 5s**.
+4. You will see real-time charts, event maps, and the events table with clickable **Action** links!
+
+---
+
+### Summary of Terminal Layout for Demo Video
+
+| Window | What Runs Here |
+|---|---|
+| **Top Left** | **Terminal TUI Dashboard** (`node cli-dashboard/dashboard.js`) |
+| **Top Right** | **Kibana Web Dashboard** (`http://localhost:5601`) |
+| **Bottom Left** | **Node.js Framework Server** (`npm start`) |
+| **Bottom Right** | **Python Simulator** (`python log-simulator/simulator.py`) |
+
+To stop the Docker containers when you are done:
+```powershell
+docker compose down
+```

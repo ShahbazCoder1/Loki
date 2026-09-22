@@ -1,7 +1,7 @@
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
-    container_name: ulpf-elasticsearch
+    container_name: loki-elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -9,11 +9,11 @@ services:
     ports:
       - "9200:9200"
     networks:
-      - ulpf-net
+      - loki-net
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.15.0
-    container_name: ulpf-kibana
+    container_name: loki-kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     ports:
@@ -21,8 +21,8 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - ulpf-net
+      - loki-net
 
 networks:
-  ulpf-net:
+  loki-net:
     driver: bridge
