@@ -146,6 +146,7 @@ body {
     letter-spacing: -0.05em;
     background: linear-gradient(90deg, #ffffff 0%, #4ade80 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 1rem;
 }
@@ -527,6 +528,33 @@ body {
     background-color: transparent;
 }
 
+@layer utilities {
+  /* Premium Transparent Fading Mask Edge-to-Edge */
+  .mask-gradient {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(0, 0, 0, 1) 15%,
+      rgba(0, 0, 0, 1) 85%,
+      transparent
+    );
+  }
+
+  /* Core infinite horizontal sliding keyframes config */
+  .animate-marquee {
+    animation: marqueeLoop 25s linear infinite;
+  }
+}
+
+@keyframes marqueeLoop {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(calc(-100% - 3rem)); /* -3rem maps to gap-12 */
+  }
+}
+
 /* Footer */
 .footer {
     padding: 4rem 0 3rem;
@@ -564,4 +592,111 @@ body {
 @media (max-width: 768px) {
     .features-grid { grid-template-columns: 1fr; }
     .nav-links { display: none; }
+}
+
+/* 1. Global Page Safeguard: Stop the browser from ever leaking horizontal scrollbars */
+html, body {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* 2. Micro-Tech Header Anchor */
+.cncf-powered-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1.25rem !important;               
+  
+  font-size: 0.75rem !important;         
+  font-weight: 700 !important;           
+  letter-spacing: 0.5em !important;      
+  text-transform: uppercase !important;
+  color: var(--text-dim, #475569) !important;
+  opacity: 0.4 !important;              
+  
+  margin-top: 6rem !important;           
+  margin-bottom: 1.5rem !important;      
+  width: 100% !important;
+  text-align: center !important;
+}
+
+/* Micro cyber lines flanking the header */
+.cncf-powered-header::before,
+.cncf-powered-header::after {
+  content: "" !important;
+  height: 1px !important;
+  width: 40px !important;                
+  background: currentColor !important;
+  opacity: 0.2 !important;
+}
+
+/* 3. Bounded Slider Wrapper - Replaced 100vw with safe percentages */
+.mask-gradient-custom {
+  display: flex !important;
+  flex-direction: row !important;
+  overflow-x: hidden !important; /* Locks down the element frame */
+  width: 100% !important;        /* Respects the layout grid without breaking out */
+  position: relative !important;
+  padding: 2.5rem 0 !important;          
+  user-select: none;
+  
+  /* Absolute edge masking grid */
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 0, 0, 1) 15%,
+    rgba(0, 0, 0, 1) 85%,
+    transparent
+  ) !important;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(0, 0, 0, 1) 15%,
+    rgba(0, 0, 0, 1) 85%,
+    transparent
+  ) !important;
+}
+
+/* 4. Infinite Running Track */
+.animate-marquee-custom {
+  display: flex !important;
+  flex-direction: row !important; 
+  align-items: center !important;
+  justify-content: flex-start !important; 
+  min-width: max-content !important;    
+  gap: 7rem !important;                  
+  padding-right: 7rem !important;       
+  
+  animation: marqueeLoop 35s linear infinite !important; 
+}
+
+/* 5. Perfectly Balanced Floating Tech Items */
+.marquee-item-custom {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 1.5rem !important;                
+  white-space: nowrap !important;
+}
+
+.marquee-item-custom svg {
+  width: 54px !important;               
+  height: 54px !important;
+  flex-shrink: 0 !important;            
+}
+
+.marquee-item-custom span {
+  font-size: 1.75rem !important;         
+  font-weight: 700 !important;          
+  letter-spacing: -0.02em !important;
+}
+
+/* 6. Seamless Loop Engine math */
+@keyframes marqueeLoop {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);         
+  }
 }

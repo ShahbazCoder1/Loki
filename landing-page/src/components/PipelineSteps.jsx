@@ -2,8 +2,8 @@ import React from 'react';
 import CopyButton from './CopyButton';
 
 export default function PipelineSteps() {
-  const step1Code = `git clone https://github.com/ShahbazCoder1/SIH-26156.git
-cd SIH-26156
+  const step1Code = `git clone https://github.com/ShahbazCoder1/Loki.git
+cd Loki
 docker compose up -d`;
   
   const step2Code = `curl -X POST http://localhost:3000/api/logs \\
@@ -28,8 +28,8 @@ docker compose up -d`;
               <div className="code-box">
                 <CopyButton textToCopy={step1Code} />
                 <pre><code>
-                  <span className="code-cmd">git clone</span> https://github.com/ShahbazCoder1/SIH-26156.git<br/>
-                  <span className="code-cmd">cd</span> SIH-26156<br/>
+                  <span className="code-cmd">git clone</span> https://github.com/ShahbazCoder1/Loki.git<br/>
+                  <span className="code-cmd">cd</span> Loki<br/>
                   <span className="code-cmd">docker compose up -d</span>
                 </code></pre>
               </div>
