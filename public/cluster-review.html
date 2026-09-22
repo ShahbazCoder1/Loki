@@ -602,6 +602,11 @@
 
       if (!approveBtn || approveBtn.disabled || !rejectBtn || rejectBtn.disabled) return;
 
+      if (action === "approve") {
+        const confirmed = window.confirm("Are you sure you want to approve and activate this parser?");
+        if (!confirmed) return;
+      }
+
       approveBtn.disabled = true;
       rejectBtn.disabled = true;
 
