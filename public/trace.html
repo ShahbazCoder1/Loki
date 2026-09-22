@@ -36,6 +36,27 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-muted) var(--bg-surface-secondary);
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-surface-secondary);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-muted);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
     }
 
     body {
@@ -761,7 +782,6 @@
         <section class="card">
           <div class="card-header">
             <span class="card-title">Field Lineage & Mapping Rules</span>
-            <span style="font-size:0.75rem; color:var(--text-muted)">Click any row to highlight fragment in raw log</span>
           </div>
           <div class="card-body">
             ${lineageHtml}
