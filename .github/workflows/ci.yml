@@ -1,4 +1,4 @@
-name: ULPF CI - Automated Test Suite
+name: Loki CI - Automated Test Suite
 
 on:
   push:
