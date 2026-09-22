@@ -28,22 +28,6 @@ router.get("/candidates", async (_req, res) => {
   }
 });
 
-// 1b. GET /api/intelligence/candidates/:candidate_id
-router.get("/candidates/:candidate_id", async (req, res) => {
-  try {
-    const candidateRecord = pendingCandidates.get(req.params.candidate_id);
-    if (!candidateRecord) {
-      return res.status(404).json({ error: "Candidate not found" });
-    }
-    return res.json({
-      status: "success",
-      candidate: candidateRecord
-    });
-  } catch (error) {
-    console.error("Error retrieving candidate:", error);
-    return res.status(500).json({ error: "Failed to retrieve candidate" });
-  }
-});
 
 // 1c. GET /api/intelligence/review/:cluster_id
 router.get("/review/:cluster_id", async (req, res) => {
