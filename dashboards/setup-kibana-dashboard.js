@@ -75,7 +75,7 @@ const searches = [
     type: "search",
     id: "ulpf-search-recent-events",
     attributes: {
-      title: "ULPF Recent Events Feed",
+      title: "Loki Recent Events Feed",
       description: "Recent processed security events from ulpf-events",
       columns: [
         "received_at",
@@ -103,7 +103,7 @@ const searches = [
     type: "search",
     id: "ulpf-search-quarantine-events",
     attributes: {
-      title: "ULPF Quarantined Events Feed",
+      title: "Loki Quarantined Events Feed",
       description: "Unrecognized / ambiguous events waiting for onboarding or review",
       columns: [
         "received_at",
@@ -126,7 +126,7 @@ const searches = [
     type: "search",
     id: "ulpf-search-deadletter-events",
     attributes: {
-      title: "ULPF Dead-Letter Events Feed",
+      title: "Loki Dead-Letter Events Feed",
       description: "Known parser matches that failed validation or processing",
       columns: [
         "received_at",
@@ -148,7 +148,7 @@ const searches = [
     type: "search",
     id: "ulpf-search-event-inspector",
     attributes: {
-      title: "ULPF Event Inspector",
+      title: "Loki Event Inspector",
       description: "Drill-down view for field-level lineage, provenance, and OCSF normalized fields",
       columns: [
         "event_id",
@@ -589,7 +589,7 @@ const dashboardSecurityOverview = {
   type: "dashboard",
   id: "ulpf-security-overview-dashboard",
   attributes: {
-    title: "ULPF - Security Overview",
+    title: "Loki - Security Overview",
     description: "Daily monitoring and security operations dashboard for perimeter devices",
     panelsJSON: JSON.stringify(d1Panels),
     optionsJSON: JSON.stringify({ hidePanelTitles: false, useMargins: true }),
@@ -635,7 +635,7 @@ const dashboardQuarantine = {
   type: "dashboard",
   id: "ulpf-quarantine-intelligence-dashboard",
   attributes: {
-    title: "ULPF - Quarantine & Intelligence",
+    title: "Loki - Quarantine & Intelligence",
     description: "Handling unknown logs, cluster patterns, and AI parser candidates",
     panelsJSON: JSON.stringify(d2Panels),
     optionsJSON: JSON.stringify({ hidePanelTitles: false, useMargins: true }),
@@ -662,7 +662,7 @@ const dashboardEventInspector = {
   type: "dashboard",
   id: "ulpf-event-inspector-dashboard",
   attributes: {
-    title: "ULPF - Event Inspector",
+    title: "Loki - Event Inspector",
     description: "Single event drill-down, field-level lineage, and provenance inspection",
     panelsJSON: JSON.stringify(d3Panels),
     optionsJSON: JSON.stringify({ hidePanelTitles: false, useMargins: true }),
@@ -765,7 +765,7 @@ export async function setupKibana() {
     await exportNdjsonFile(allObjects);
 
     console.log("\n=======================================================");
-    console.log("ULPF Kibana Dashboard Suite Setup Completed!");
+    console.log("Loki Kibana Dashboard Suite Setup Completed!");
     console.log("Dashboards Created:");
     console.log(`  1. Security Overview:        ${KIBANA_URL}/app/dashboards#/view/ulpf-security-overview-dashboard`);
     console.log(`  2. Quarantine & Intelligence: ${KIBANA_URL}/app/dashboards#/view/ulpf-quarantine-intelligence-dashboard`);

@@ -7,7 +7,7 @@ const SERVER_URL =
 
 const screen = blessed.screen({
     smartCSR: true,
-    title: "ULPF Terminal Dashboard",
+    title: "Loki Terminal Dashboard",
     fullUnicode: true,
 });
 
@@ -20,7 +20,7 @@ const screen = blessed.screen({
  *
  * Row 0-6   : Live Events       | Throughput
  * Row 4-6   :                  | Source Distribution
- * Row 7-10  : Status            | ULPF System
+ * Row 7-10  : Status            | Loki System
  * Row 11    : Footer
  *
  * IMPORTANT:
@@ -153,7 +153,7 @@ const statusLabels = blessed.text({
 
 
 const systemInfo = grid.set(7, 6, 4, 6, blessed.box, {
-    label: " ULPF System ",
+    label: " Loki System ",
 
     border: {
         type: "line",
@@ -324,7 +324,7 @@ function getPanelTitle(name) {
             return "Log Processing Status";
 
         case "system":
-            return "ULPF System";
+            return "Loki System";
 
         default:
             return name;
@@ -675,7 +675,7 @@ const expandedContainer = blessed.box({
         fg: "white",
     },
 
-    label: " ULPF Expanded View ",
+    label: " Loki Expanded View ",
 
     tags: true,
 
@@ -1167,7 +1167,7 @@ function updateExpandedSystem() {
             : "—";
 
     widget.setContent(
-        `{bold}ULPF Runtime{/bold}\n\n` +
+        `{bold}Loki Runtime{/bold}\n\n` +
 
         `Server URL\n` +
         `  ${SERVER_URL}\n\n` +
@@ -1249,7 +1249,7 @@ function updateExpandedView() {
 /* -------------------------------------------------------------------------- */
 
 function expandedTitle(name) {
-    return ` ULPF / ${getPanelTitle(
+    return ` Loki / ${getPanelTitle(
         name
     )} `;
 }
@@ -1817,7 +1817,7 @@ screen.on(
 /* -------------------------------------------------------------------------- */
 
 systemInfo.setContent(
-    `{bold}ULPF Runtime{/bold}\n\n` +
+    `{bold}Loki Runtime{/bold}\n\n` +
     `Server: ${SERVER_URL}\n\n` +
     `{yellow-fg}Connecting to event stream...{/yellow-fg}`
 );

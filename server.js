@@ -55,7 +55,7 @@ export function startServer({ port = Number(process.env.PORT || 3000) } = {}) {
   startWatcher();
   warmupOllamaModel().catch(() => {});
   return createApp().listen(port, () => {
-    console.log(`ULPF Prototype running on http://localhost:${port}`);
+    console.log(`Loki Prototype running on http://localhost:${port}`);
   });
 }
 

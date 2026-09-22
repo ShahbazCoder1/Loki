@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-ULPF Log Simulator (Universal Log Pre-processing Framework)
+Loki Log Simulator (Universal Log Pre-processing Framework)
 -----------------------------------------------------------
 Simulates network perimeter devices, SIEM feeds, and real host system logs
-by sending synthetic and live logs to the ULPF API server.
+by sending synthetic and live logs to the Loki API server.
 
 Modes:
   - Stream Mode: Continuous stream of mixed synthetic + real laptop logs.
@@ -264,7 +264,7 @@ def pick_random_mixed_log():
 # Core HTTP Sender
 # -----------------------------------------------------------------------------
 def send_log(raw_log, source_label, category_key=None):
-    """Post log payload to ULPF API and print formatted status."""
+    """Post log payload to Loki API and print formatted status."""
     payload = json.dumps({"raw": raw_log}).encode("utf-8")
     req = urllib.request.Request(
         API_URL,
@@ -307,7 +307,7 @@ def send_log(raw_log, source_label, category_key=None):
         print(f"{Colors.RED}[HTTP ERROR {e.code}]{Colors.END} {source_label}: {e.reason}")
     except urllib.error.URLError as e:
         STATS["errors"] += 1
-        print(f"{Colors.RED}[CONN ERROR]{Colors.END} Could not reach ULPF server at {API_URL}: {e.reason}")
+        print(f"{Colors.RED}[CONN ERROR]{Colors.END} Could not reach Loki server at {API_URL}: {e.reason}")
     except Exception as e:
         STATS["errors"] += 1
         print(f"{Colors.RED}[ERROR]{Colors.END} {source_label}: {str(e)}")
@@ -322,7 +322,7 @@ def print_summary():
     rate = STATS["total"] / max(elapsed, 0.001)
 
     print("\n" + "=" * 65)
-    print(f"{Colors.BOLD}{Colors.CYAN}            ULPF LOG SIMULATION SUMMARY REPORT{Colors.END}")
+    print(f"{Colors.BOLD}{Colors.CYAN}            Loki LOG SIMULATION SUMMARY REPORT{Colors.END}")
     print("=" * 65)
     print(f" Total Events Sent:      {Colors.BOLD}{STATS['total']}{Colors.END}")
     print(f" Runtime Elapsed:        {elapsed:.2f} seconds ({rate:.1f} events/sec)")
@@ -346,7 +346,7 @@ def print_summary():
 def run_stream(delay=1.0):
     """Continuous stream of mixed logs."""
     print(f"{Colors.HEADER}======================================================={Colors.END}")
-    print(f"{Colors.BOLD}ULPF Log Simulator — Stream Mode{Colors.END}")
+    print(f"{Colors.BOLD}Loki Log Simulator — Stream Mode{Colors.END}")
     print(f"Streaming mixed synthetic + real laptop logs every {delay}s...")
     print(f"Target Server: {API_URL}")
     print(f"Press {Colors.BOLD}Ctrl + C{Colors.END} at any time to stop and view report.")
@@ -363,7 +363,7 @@ def run_stream(delay=1.0):
 def run_burst(count=50):
     """Fast burst of N mixed logs."""
     print(f"{Colors.HEADER}======================================================={Colors.END}")
-    print(f"{Colors.BOLD}ULPF Log Simulator — Burst Mode{Colors.END}")
+    print(f"{Colors.BOLD}Loki Log Simulator — Burst Mode{Colors.END}")
     print(f"Sending {count} mixed logs in fast burst...")
     print(f"Target Server: {API_URL}")
     print(f"{Colors.HEADER}======================================================={Colors.END}\n")
@@ -378,7 +378,7 @@ def run_burst(count=50):
 def run_demo():
     """Orchestrated hackathon demo presentation sequence."""
     print(f"{Colors.HEADER}================================================================={Colors.END}")
-    print(f"{Colors.BOLD}{Colors.CYAN}       ULPF HACKATHON LIVE DEMO SIMULATION ENGINE{Colors.END}")
+    print(f"{Colors.BOLD}{Colors.CYAN}       Loki HACKATHON LIVE DEMO SIMULATION ENGINE{Colors.END}")
     print(f" Demonstrating confidence resolution, multi-vendor parsing,")
     print(f" live laptop log quarantine, and real-time Kibana analytics.")
     print(f"{Colors.HEADER}================================================================={Colors.END}\n")

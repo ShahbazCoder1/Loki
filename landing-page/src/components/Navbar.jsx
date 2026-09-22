@@ -4,7 +4,7 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="nav-container">
-        <div className="logo">ULPF</div>
+        <div className="logo">Loki</div>
         <div className="nav-links">
           <a href="#features">Features</a>
           <a href="#api">API</a>

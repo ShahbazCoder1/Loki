@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ULPF Event Trace</title>
+  <title>Loki Event Trace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -391,10 +391,10 @@
   <header>
     <div class="nav-container">
       <div class="brand">
-        <div class="brand-logo">U</div>
+        <img class="brand-logo" src="/Loki.png" alt="Loki Logo" style="border: none; background: transparent;">
         <div>
-          <div style="font-size:0.7rem; color:var(--text-muted); font-family:var(--font-mono); font-weight:500; text-transform:uppercase; letter-spacing:0.04em;">ULPF / Diagnostics</div>
-          <div class="brand-title">ULPF Event Trace</div>
+          <div style="font-size:0.7rem; color:var(--text-muted); font-family:var(--font-mono); font-weight:500; text-transform:uppercase; letter-spacing:0.04em;">Loki / Diagnostics</div>
+          <div class="brand-title">Loki Event Trace</div>
         </div>
       </div>
       <div class="brand-subtitle" id="header-meta">
@@ -406,7 +406,7 @@
   <main id="app-main">
     <div class="card state-container" id="loading-state">
       <div class="state-title">Loading Event Trace...</div>
-      <div class="state-desc" id="loading-desc">Fetching event envelope from ULPF index...</div>
+      <div class="state-desc" id="loading-desc">Fetching event envelope from Loki index...</div>
     </div>
   </main>
 
@@ -820,7 +820,7 @@
             main.innerHTML = `
               <div class="card state-container">
                 <div class="state-title" style="color:var(--status-fail-text)">Event Not Found (HTTP 404)</div>
-                <div class="state-desc">The requested event <code>${escapeHtml(eventId)}</code> was not found in the <code>ulpf-events</code> index.</div>
+                <div class="state-desc">The requested event <code>${escapeHtml(eventId)}</code> was not found in the <code>loki-events</code> index.</div>
               </div>
             `;
             return;

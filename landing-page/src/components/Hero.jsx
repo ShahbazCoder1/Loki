@@ -8,7 +8,7 @@ export default function Hero() {
     <header className="hero">
       <div className="hero-content">
         <div className="hero-version"><span className="pulse-dot"></span> v1.0 - Now Available</div>
-        <h1 className="hero-logo-text">ULPF</h1>
+        <h1 className="hero-logo-text">Loki</h1>
         <h2 className="hero-title">Universal Log Pre-processing Framework</h2>
         <p className="hero-subtitle">One framework to ingest, parse, normalize, and export security logs from<br />any device.</p>
         
