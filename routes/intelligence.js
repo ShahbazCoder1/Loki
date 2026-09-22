@@ -13,61 +13,10 @@ const router = express.Router();
 // In-memory store for pending candidates
 const pendingCandidates = new Map();
 
-// Helper to get base URL for approve/reject URLs
-function getBaseUrl() {
-  return (process.env.ULPF_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
-}
-
-// Helper to ensure candidates exist from available clusters if store is empty
-async function ensureCandidates() {
-  if (pendingCandidates.size > 0) {
-    return Array.from(pendingCandidates.values());
-  }
-
-  const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
-  const existingClusterIds = new Set(Array.from(pendingCandidates.values()).map(c => c.cluster_id));
-  const unhandledClusters = clusters.filter(c => c.cluster_id && !existingClusterIds.has(c.cluster_id));
-
-  if (unhandledClusters.length > 0) {
-    unhandledClusters.sort((a, b) => {
-      const timeA = new Date(a.last_seen || a.first_seen || 0).getTime();
-      const timeB = new Date(b.last_seen || b.first_seen || 0).getTime();
-      return timeB - timeA;
-    });
-
-    const cluster = unhandledClusters[0];
-    const baseUrl = getBaseUrl();
-    try {
-      const candidate = await generateCandidateParser(cluster, { timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 120000 });
-      const testRes = testCandidate(candidate, cluster.samples || [], []);
-      const candidate_id = candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`;
-      const candidateRecord = {
-        candidate_id,
-        cluster_id: cluster.cluster_id,
-        device_family: candidate.device_family || "Unknown Device",
-        cluster_size: cluster.count || (cluster.samples ? cluster.samples.length : 1),
-        first_seen: cluster.first_seen || new Date().toISOString(),
-        last_seen: cluster.last_seen || new Date().toISOString(),
-        approve_url: `${baseUrl}/approve/${candidate_id}`,
-        reject_url: `${baseUrl}/reject/${candidate_id}`,
-        candidate,
-        test_results: testRes,
-        status: "pending"
-      };
-      pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
-    } catch (error) {
-      console.warn(`[Intelligence] Failed to generate candidate for cluster ${cluster.cluster_id}:`, error.message);
-    }
-  }
-
-
-  return Array.from(pendingCandidates.values());
-}
-
 // 1. GET /api/intelligence/candidates
 router.get("/candidates", async (_req, res) => {
   try {
-    const candidates = await ensureCandidates();
+    const candidates = Array.from(pendingCandidates.values());
     return res.json({
       status: "success",
       total_candidates: candidates.length,
@@ -82,7 +31,6 @@ router.get("/candidates", async (_req, res) => {
 // 1b. GET /api/intelligence/candidates/:candidate_id
 router.get("/candidates/:candidate_id", async (req, res) => {
   try {
-    await ensureCandidates();
     const candidateRecord = pendingCandidates.get(req.params.candidate_id);
     if (!candidateRecord) {
       return res.status(404).json({ error: "Candidate not found" });
@@ -94,6 +42,54 @@ router.get("/candidates/:candidate_id", async (req, res) => {
   } catch (error) {
     console.error("Error retrieving candidate:", error);
     return res.status(500).json({ error: "Failed to retrieve candidate" });
+  }
+});
+
+// 1c. GET /api/intelligence/review/:cluster_id
+router.get("/review/:cluster_id", async (req, res) => {
+  try {
+    const { cluster_id } = req.params;
+
+    if (pendingCandidates.has(cluster_id)) {
+      return res.json({ status: "success", candidate: pendingCandidates.get(cluster_id) });
+    }
+
+    const clusters = await clusterQuarantinedEvents({ useSampleFallbacks: true });
+    const cluster = clusters.find(c => c.cluster_id === cluster_id || c.fingerprint_hash === cluster_id);
+
+    if (!cluster) {
+      return res.status(404).json({ error: "Cluster not found" });
+    }
+
+    const candidate = await generateCandidateParser(cluster, {
+      timeout: Number(process.env.OLLAMA_TIMEOUT_MS) || 120000
+    });
+    const testRes = testCandidate(candidate, cluster.samples || [], []);
+
+    const candidate_id = candidate.parser_id || `candidate_${cluster.cluster_id.substring(0, 8)}`;
+    const candidateRecord = {
+      candidate_id,
+      cluster_id: cluster.cluster_id,
+      device_family: candidate.device_family || "Unknown Device",
+      cluster_size: cluster.count || (cluster.samples ? cluster.samples.length : 1),
+      candidate,
+      test_results: testRes,
+      status: "pending"
+    };
+
+    pendingCandidates.set(cluster_id, candidateRecord);
+
+    return res.json({
+      status: "success",
+      candidate: candidateRecord
+    });
+  } catch (error) {
+    console.error("Error generating parser on-demand:", error.message);
+    const statusCode = (error.ollama_status === "offline" || error.ollama_status === "timeout") ? 503 : 500;
+    return res.status(statusCode).json({
+      error: error.message || "Failed to generate candidate parser",
+      ollama_status: error.ollama_status || "error"
+    });
   }
 });
 
@@ -158,7 +154,6 @@ router.post("/generate", async (req, res) => {
     });
     const testResults = testCandidate(candidate, targetCluster.samples || candidate.samples || [], []);
 
-    const baseUrl = getBaseUrl();
     const candidate_id = candidate.parser_id || `candidate_${targetCluster.cluster_id.substring(0, 8)}`;
 
     const candidateRecord = {
@@ -166,16 +161,12 @@ router.post("/generate", async (req, res) => {
       cluster_id: targetCluster.cluster_id,
       device_family: candidate.device_family || "Unknown Device",
       cluster_size: targetCluster.count || (targetCluster.samples ? targetCluster.samples.length : 1),
-      first_seen: targetCluster.first_seen || new Date().toISOString(),
-      last_seen: targetCluster.last_seen || new Date().toISOString(),
-      approve_url: `${baseUrl}/approve/${candidate_id}`,
-      reject_url: `${baseUrl}/reject/${candidate_id}`,
       candidate,
       test_results: testResults,
       status: "pending"
     };
 
-    pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
+    pendingCandidates.set(targetCluster.cluster_id, candidateRecord);
 
     return res.json({
       status: "generated",
@@ -227,16 +218,17 @@ router.post("/test", (req, res) => {
 // 5. POST /api/intelligence/approve
 router.post("/approve", (req, res) => {
   try {
-    let { candidate, candidate_id } = req.body || {};
+    let { candidate, candidate_id, cluster_id } = req.body || {};
 
     if (candidate && candidate.candidate) {
       candidate = candidate.candidate;
     }
 
     let targetCandidate = candidate;
+    const lookupId = cluster_id || candidate_id;
 
-    if (!targetCandidate && candidate_id) {
-      const record = pendingCandidates.get(candidate_id);
+    if (!targetCandidate && lookupId) {
+      const record = pendingCandidates.get(lookupId);
       if (record) {
         targetCandidate = record.candidate;
       }
@@ -244,13 +236,13 @@ router.post("/approve", (req, res) => {
 
     if (!targetCandidate || !targetCandidate.parser_id || !targetCandidate.extraction_rules) {
       return res.status(400).json({
-        error: "Request body must contain a valid candidate parser object or valid candidate_id"
+        error: "Request body must contain a valid candidate parser object or valid cluster_id"
       });
     }
 
     const activation = activateCandidate(targetCandidate);
-    if (candidate_id) {
-      pendingCandidates.delete(candidate_id);
+    if (lookupId) {
+      pendingCandidates.delete(lookupId);
     } else if (targetCandidate.parser_id) {
       pendingCandidates.delete(targetCandidate.parser_id);
     }
@@ -270,17 +262,18 @@ router.post("/approve", (req, res) => {
 // 6. POST /api/intelligence/reject
 router.post("/reject", (req, res) => {
   try {
-    const { candidate_id } = req.body || {};
-    if (!candidate_id) {
-      return res.status(400).json({ error: "candidate_id is required for rejection" });
+    const { candidate_id, cluster_id } = req.body || {};
+    const lookupId = cluster_id || candidate_id;
+    if (!lookupId) {
+      return res.status(400).json({ error: "cluster_id or candidate_id is required for rejection" });
     }
 
-    pendingCandidates.delete(candidate_id);
+    pendingCandidates.delete(lookupId);
 
     return res.json({
       status: "rejected",
-      candidate_id,
-      message: `Candidate '${candidate_id}' has been rejected.`
+      cluster_id: lookupId,
+      message: `Candidate for cluster '${lookupId}' has been rejected.`
     });
   } catch (error) {
     console.error("Error rejecting candidate:", error);
