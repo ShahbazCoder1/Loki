@@ -6,7 +6,7 @@ import {
   activateCandidate,
   analyzeSecurityQuestion
 } from "../modules/intelligence.js";
-import { updateQuarantineCandidateUrls } from "../modules/exporter.js";
+
 
 const router = express.Router();
 
@@ -60,12 +60,6 @@ async function ensureCandidates() {
     }
   }
 
-  // Ensure Elasticsearch quarantine documents are updated for all candidates in store
-  for (const candRecord of pendingCandidates.values()) {
-    if (candRecord.cluster_id && candRecord.approve_url && candRecord.reject_url) {
-      await updateQuarantineCandidateUrls(candRecord.cluster_id, candRecord.approve_url, candRecord.reject_url);
-    }
-  }
 
   return Array.from(pendingCandidates.values());
 }
@@ -182,7 +176,6 @@ router.post("/generate", async (req, res) => {
     };
 
     pendingCandidates.set(candidateRecord.candidate_id, candidateRecord);
-    updateQuarantineCandidateUrls(targetCluster.cluster_id, candidateRecord.approve_url, candidateRecord.reject_url).catch(() => {});
 
     return res.json({
       status: "generated",
