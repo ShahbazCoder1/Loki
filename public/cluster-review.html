@@ -356,6 +356,134 @@
       max-width: 480px;
       margin: 0 auto 1.25rem;
     }
+
+    /* Confirmation Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      max-width: 360px;
+      width: 90%;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    .modal-header {
+      padding: 0;
+      background-color: transparent;
+    }
+
+    .modal-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .modal-body {
+      padding: 0;
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      padding-top: 0.35rem;
+      background-color: transparent;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+    }
+
+    .btn-modal-approve {
+      background-color: #1e2d24;
+      border: 1px solid #2e4436;
+      color: #6edc8c;
+    }
+
+    .btn-modal-approve:hover:not(:disabled) {
+      background-color: #23382c;
+      border-color: #3b5945;
+      color: #82e49d;
+    }
+
+    .btn-modal-reject {
+      background-color: #2c2223;
+      border: 1px solid #4a3335;
+      color: #f08c8c;
+    }
+
+    .btn-modal-reject:hover:not(:disabled) {
+      background-color: #382829;
+      border-color: #593b3e;
+      color: #f5a3a3;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background-color: var(--status-success-bg);
+      border: 1px solid var(--status-success-border);
+      color: var(--status-success-text);
+      padding: 0.65rem 1.1rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: auto;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.toast-reject {
+      background-color: var(--status-fail-bg);
+      border: 1px solid var(--status-fail-border);
+      color: var(--status-fail-text);
+    }
   </style>
 </head>
 <body>
@@ -378,6 +506,22 @@
       <div class="state-desc" id="loading-desc">Fetching parser candidate record from Loki intelligence backend...</div>
     </div>
   </main>
+
+  <!-- Confirmation Modal -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-title">Confirm Approval</span>
+      </div>
+      <div class="modal-body" id="modal-body">
+        Approve and activate this parser?
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn btn-modal-approve" id="modal-ok-btn">Approve</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     function escapeHtml(str) {
@@ -581,8 +725,7 @@
           </div>
 
           <!-- Card Footer Action Controls -->
-          <div class="card-footer" style="display: flex; gap: 10px;">
-            <a href="/" class="btn btn-secondary" style="margin-right: auto;">Cancel</a>
+          <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
             <button id="reject-btn" class="btn btn-confirm-reject" onclick="executeAction('${escapeHtml(clusterId)}', 'reject')">
               Reject
             </button>
@@ -594,6 +737,73 @@
       `;
     }
 
+    function showConfirmModal(action = "approve") {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("confirm-modal");
+        const titleEl = document.getElementById("modal-title");
+        const bodyEl = document.getElementById("modal-body");
+        const okBtn = document.getElementById("modal-ok-btn");
+        const cancelBtn = document.getElementById("modal-cancel-btn");
+
+        const isApprove = action === "approve";
+        if (titleEl) titleEl.textContent = isApprove ? "Confirm Approval" : "Confirm Rejection";
+        if (bodyEl) bodyEl.textContent = isApprove ? "Approve and activate this parser?" : "Reject this parser candidate?";
+
+        if (okBtn) {
+          okBtn.textContent = isApprove ? "Approve" : "Reject";
+          okBtn.className = isApprove ? "btn btn-modal-approve" : "btn btn-modal-reject";
+        }
+
+        function cleanup() {
+          modal.classList.remove("active");
+          okBtn.removeEventListener("click", onOk);
+          cancelBtn.removeEventListener("click", onCancel);
+        }
+
+        function onOk() {
+          cleanup();
+          resolve(true);
+        }
+
+        function onCancel() {
+          cleanup();
+          resolve(false);
+        }
+
+        okBtn.addEventListener("click", onOk);
+        cancelBtn.addEventListener("click", onCancel);
+        modal.classList.add("active");
+      });
+    }
+
+    function showToast(message, type = "success", duration = 3500) {
+      let container = document.getElementById("toast-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.className = "toast-container";
+        container.id = "toast-container";
+        document.body.appendChild(container);
+      }
+
+      const toast = document.createElement("div");
+      const isReject = type === "reject" || type === "error";
+      toast.className = isReject ? "toast toast-reject" : "toast";
+      const icon = isReject ? "✕" : "✓";
+      toast.innerHTML = `<span>${icon}</span> <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.add("show");
+      });
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+        toast.addEventListener("transitionend", () => {
+          toast.remove();
+        });
+      }, duration);
+    }
+
     // 4. Confirmation action handler
     async function executeAction(clusterId, action) {
       const approveBtn = document.getElementById("approve-btn");
@@ -601,6 +811,9 @@
       const banner = document.getElementById("result-banner");
 
       if (!approveBtn || approveBtn.disabled || !rejectBtn || rejectBtn.disabled) return;
+
+      const confirmed = await showConfirmModal(action);
+      if (!confirmed) return;
 
       approveBtn.disabled = true;
       rejectBtn.disabled = true;
@@ -635,6 +848,7 @@
               <span>Parser '<strong>${escapeHtml(data.parser_id || clusterId)}</strong>' has been approved and activated! Hot-reload completed.</span>
             </div>
           `;
+          showToast("Parser approved and activated successfully.", "success");
         } else {
           rejectBtn.textContent = "Rejected";
           banner.innerHTML = `
@@ -642,6 +856,7 @@
               <span>Candidate for cluster '<strong>${escapeHtml(clusterId)}</strong>' has been rejected.</span>
             </div>
           `;
+          showToast("Parser candidate rejected successfully.", "reject");
         }
       } catch (err) {
         // Error state: re-enable button for retry
