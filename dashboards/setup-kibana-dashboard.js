@@ -22,7 +22,7 @@ const indexPatterns = [
           params: {
             type: "a",
             urlTemplate: "{{rawValue}}",
-            labelTemplate: "{{value}}",
+            labelTemplate: "view source log",
             openInNewTab: true
           }
         }
@@ -36,17 +36,8 @@ const indexPatterns = [
       title: "ulpf-quarantine*",
       timeFieldName: "received_at",
       name: "ulpf-quarantine",
-      fields: JSON.stringify([
-        {
-          name: "review_url",
-          type: "string",
-          scripted: true,
-          script: "if (doc.containsKey('structural_fingerprint.keyword') && !doc['structural_fingerprint.keyword'].empty) { return doc['structural_fingerprint.keyword'].value; } return '';",
-          lang: "painless"
-        }
-      ]),
       fieldFormatMap: JSON.stringify({
-        review_url: {
+        structural_fingerprint: {
           id: "url",
           params: {
             type: "a",
@@ -118,7 +109,7 @@ const searches = [
         "received_at",
         "processing_status",
         "quarantine_reason",
-        "structural_fingerprint",
+        "structural_fingerprint.keyword",
         "raw.immutable_payload"
       ],
       sort: [["received_at", "desc"]],
@@ -536,9 +527,9 @@ const visualizations = [
         title: "Unknown Log Clusters",
         type: "table",
         aggs: [
-          { id: "1", enabled: true, type: "count", schema: "metric", params: { customLabel: "Event Count" } },
           { id: "4", enabled: true, type: "terms", schema: "bucket", params: { field: "structural_fingerprint.keyword", size: 20, order: "desc", orderBy: "1", customLabel: "Cluster Fingerprint" } },
-          { id: "5", enabled: true, type: "terms", schema: "bucket", params: { field: "review_url", size: 1, order: "desc", orderBy: "1", customLabel: "Action" } }
+          { id: "1", enabled: true, type: "count", schema: "metric", params: { customLabel: "Event Count" } },
+          { id: "5", enabled: true, type: "top_hits", schema: "metric", params: { field: "structural_fingerprint", aggregate: "concat", size: 1, sortField: "received_at", sortOrder: "desc", customLabel: "Action" } }
         ]
       }),
       uiStateJSON: "{}",
