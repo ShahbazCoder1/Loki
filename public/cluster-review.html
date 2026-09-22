@@ -478,6 +478,12 @@
       opacity: 1;
       transform: translateY(0);
     }
+
+    .toast.toast-reject {
+      background-color: var(--status-fail-bg);
+      border: 1px solid var(--status-fail-border);
+      color: var(--status-fail-text);
+    }
   </style>
 </head>
 <body>
@@ -770,7 +776,7 @@
       });
     }
 
-    function showToast(message, duration = 3500) {
+    function showToast(message, type = "success", duration = 3500) {
       let container = document.getElementById("toast-container");
       if (!container) {
         container = document.createElement("div");
@@ -780,8 +786,10 @@
       }
 
       const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.innerHTML = `<span>✓</span> <span>${escapeHtml(message)}</span>`;
+      const isReject = type === "reject" || type === "error";
+      toast.className = isReject ? "toast toast-reject" : "toast";
+      const icon = isReject ? "✕" : "✓";
+      toast.innerHTML = `<span>${icon}</span> <span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
 
       requestAnimationFrame(() => {
@@ -840,7 +848,7 @@
               <span>Parser '<strong>${escapeHtml(data.parser_id || clusterId)}</strong>' has been approved and activated! Hot-reload completed.</span>
             </div>
           `;
-          showToast("Parser approved and activated successfully.");
+          showToast("Parser approved and activated successfully.", "success");
         } else {
           rejectBtn.textContent = "Rejected";
           banner.innerHTML = `
@@ -848,6 +856,7 @@
               <span>Candidate for cluster '<strong>${escapeHtml(clusterId)}</strong>' has been rejected.</span>
             </div>
           `;
+          showToast("Parser candidate rejected successfully.", "reject");
         }
       } catch (err) {
         // Error state: re-enable button for retry
