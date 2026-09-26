@@ -245,27 +245,42 @@ def random_unknown():
     ]
     return random.choice(templates)
 
+def random_deadletter():
+    """Generate log with known signature but invalid structure to trigger dead-letter."""
+    templates = [
+        # Matches Cisco ASA signature but missing required action/IP fields
+        f"%ASA-6-999999: System error occurred during processing [MALFORMED DEADLETTER LOG]",
+        # Matches Fortinet signature but completely broken key-value pairs
+        f"date=2026-08-25 devname=FGT100D CRASH_DUMP: {random.randint(1000, 9999)} invalid_state [MALFORMED DEADLETTER LOG]",
+        # Matches CEF signature but missing severity and other mandatory fields
+        f"CEF:0|Vendor|Product|1.0|100|Error||msg=Completely broken CEF payload [MALFORMED DEADLETTER LOG]"
+    ]
+    return random.choice(templates)
+
 # -----------------------------------------------------------------------------
 # Weighted Mixer: Synthetic + Real Host Logs
 # -----------------------------------------------------------------------------
 def pick_random_mixed_log():
     """
     Weighted log picker:
-      - 25% Cisco ASA (synthetic)
-      - 25% Fortinet (synthetic)
+      - 20% Cisco ASA (synthetic)
+      - 20% Fortinet (synthetic)
       - 20% CEF (synthetic)
       - 10% Unknown format (synthetic)
+      - 10% Malformed Dead-Letter
       - 20% Real Laptop OS Event Logs (live host capture)
     """
     roll = random.random()
-    if roll < 0.25:
+    if roll < 0.20:
         return random_cisco_asa(), "Cisco ASA", "cisco"
-    elif roll < 0.50:
+    elif roll < 0.40:
         return random_fortinet(), "Fortinet", "fortinet"
-    elif roll < 0.70:
+    elif roll < 0.60:
         return random_cef(), "CEF", "cef"
-    elif roll < 0.80:
+    elif roll < 0.70:
         return random_unknown(), "Unknown Format", "unknown"
+    elif roll < 0.80:
+        return random_deadletter(), "Malformed (Dead-Letter)", "dead_letter"
     else:
         return get_real_laptop_log(), f"Real Laptop ({platform.system()})", "real_laptop"
 
@@ -397,7 +412,8 @@ def run_demo():
         ("Phase 2: Fortinet FortiGate Gateway", [random_fortinet() for _ in range(5)], "Fortinet", "fortinet", 1.0),
         ("Phase 3: ArcSight Common Event Format (CEF)", [random_cef() for _ in range(5)], "CEF", "cef", 1.0),
         ("Phase 4: Unrecognized Device Logs (Quarantine Trigger)", [random_unknown() for _ in range(4)], "Unknown Format", "unknown", 1.2),
-        (f"Phase 5: LIVE Laptop System Logs ({platform.system()})", [get_real_laptop_log() for _ in range(5)], f"Real Laptop ({platform.system()})", "real_laptop", 1.2)
+        (f"Phase 5: LIVE Laptop System Logs ({platform.system()})", [get_real_laptop_log() for _ in range(5)], f"Real Laptop ({platform.system()})", "real_laptop", 1.2),
+        ("Phase 6: Malformed Logs (Dead-Letter Trigger)", [random_deadletter() for _ in range(3)], "Malformed (Dead-Letter)", "dead_letter", 1.2)
     ]
 
     try:
@@ -409,7 +425,7 @@ def run_demo():
                 time.sleep(phase_delay)
             time.sleep(1.0)
 
-        print(f"\n{Colors.BOLD}{Colors.GREEN}▶ Phase 6: Continuous Mixed Ingestion Stream (Synthetic + Real){Colors.END}")
+        print(f"\n{Colors.BOLD}{Colors.GREEN}▶ Phase 7: Continuous Mixed Ingestion Stream (Synthetic + Real){Colors.END}")
         print("Kibana dashboard is now receiving live multi-vendor telemetry...")
         print(f"Press {Colors.BOLD}Ctrl + C{Colors.END} to finish demo.\n")
         print("-" * 55)
