@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Architecture() {
   return (
-    <section id="architecture" className="section section-border-top">
+    <section id="architecture" className="section section-border-top reveal-section">
       <div className="container">
         <div className="section-header text-center">
           <h2 className="section-title">System Architecture</h2>

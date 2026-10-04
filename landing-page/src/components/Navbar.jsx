@@ -24,14 +24,36 @@ export default function Navbar({ onOpenDocs }) {
           <li><a href="#pipeline" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Pipeline</a></li>
           <li><a href="#formats" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Formats</a></li>
           <li><a href="#traceability" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Traceability</a></li>
-          <li><a href="#docs" className="nav-link" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); onOpenDocs(); }}>Docs</a></li>
+          
+          <li className="mobile-only-action">
+            <a 
+              href="#architecture" 
+              onClick={() => setMobileMenuOpen(false)}
+              className="btn btn-outline-subtle" 
+              style={{ width: '100%', justifyContent: 'center', padding: '0.55rem 1rem', fontSize: '0.85rem' }}
+            >
+              <span>Architecture</span>
+            </a>
+          </li>
+          <li className="mobile-only-action">
+            <a
+              href="https://github.com/ShahbazCoder1/Loki"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav-github-btn"
+              style={{ width: '100%', justifyContent: 'center', padding: '0.55rem 1rem', fontSize: '0.85rem' }}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <GithubIcon size={15} />
+              <span>GitHub</span>
+            </a>
+          </li>
         </ul>
 
         <div className="nav-cta">
           <a 
             href="#architecture" 
-            onClick={() => setMobileMenuOpen(false)}
-            className="btn btn-outline-subtle" 
+            className="btn btn-outline-subtle desktop-only-cta" 
             style={{ padding: '0.4rem 0.85rem', fontSize: '0.825rem' }}
           >
             <span>Architecture</span>
@@ -41,7 +63,7 @@ export default function Navbar({ onOpenDocs }) {
             href="https://github.com/ShahbazCoder1/Loki"
             target="_blank"
             rel="noopener noreferrer"
-            className="nav-github-btn"
+            className="nav-github-btn desktop-only-cta"
           >
             <GithubIcon size={15} />
             <span>GitHub</span>
@@ -52,7 +74,7 @@ export default function Navbar({ onOpenDocs }) {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle Navigation Menu"
           >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>

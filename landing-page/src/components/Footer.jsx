@@ -10,7 +10,7 @@ const GithubIcon = ({ size = 14 }) => (
 
 export default function Footer() {
   return (
-    <footer className="footer">
+    <footer className="footer reveal-section">
       <div className="container">
         <div className="footer-content">
           <div>
@@ -26,9 +26,8 @@ export default function Footer() {
           <ul className="footer-links">
             <li><a href="#features" className="footer-link">Features</a></li>
             <li><a href="#pipeline" className="footer-link">Pipeline</a></li>
-            <li><a href="#intelligence" className="footer-link">Intelligence</a></li>
+            <li><a href="#formats" className="footer-link">Formats</a></li>
             <li><a href="#traceability" className="footer-link">Traceability</a></li>
-            <li><a href="#docs" className="footer-link">Docs</a></li>
             <li>
               <a
                 href="https://github.com/ShahbazCoder1/Loki"

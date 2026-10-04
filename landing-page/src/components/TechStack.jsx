@@ -13,7 +13,7 @@ export default function TechStack() {
   ];
 
   return (
-    <section className="section section-border-top">
+    <section className="section section-border-top reveal-section">
       <div className="container">
         <div className="section-header text-center">
           <h2 className="section-title">Built with practical infrastructure.</h2>
