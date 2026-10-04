@@ -144,7 +144,7 @@ PUT /ulpf-events/_doc/evt-7721-bf90
               </span>
             </div>
 
-            <div className="terminal-body" style={{ minHeight: '260px' }}>
+            <div className="terminal-body">
               <pre>{views[selectedTab].code}</pre>
             </div>
           </div>

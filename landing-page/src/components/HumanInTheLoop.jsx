@@ -58,7 +58,7 @@ fields:
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', color: 'var(--text-dim)' }}>YAML Spec v1.0</span>
               </div>
 
-              <div className="node-code-preview" style={{ height: '230px' }}>
+              <div className="node-code-preview">
                 <pre>{sampleYamlDraft}</pre>
               </div>
             </div>

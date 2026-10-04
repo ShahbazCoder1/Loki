@@ -119,7 +119,7 @@ fields:
               <div style={{ fontSize: '0.725rem', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginBottom: '0.4rem' }}>
                 RAW INGESTION SAMPLE
               </div>
-              <div className="node-code-preview" style={{ height: '135px' }}>
+              <div className="node-code-preview">
                 <pre>{currentFmt.rawSample}</pre>
               </div>
             </div>
@@ -128,7 +128,7 @@ fields:
               <div style={{ fontSize: '0.725rem', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginBottom: '0.4rem' }}>
                 YAML PARSER REGEX RULE
               </div>
-              <div className="node-code-preview" style={{ height: '135px' }}>
+              <div className="node-code-preview">
                 <pre>{currentFmt.yamlSpec}</pre>
               </div>
             </div>
