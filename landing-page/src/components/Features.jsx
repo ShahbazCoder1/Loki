@@ -1,44 +1,48 @@
 import React from 'react';
 
 export default function Features() {
+  const featureList = [
+    {
+      num: '01',
+      title: 'Universal Parsing',
+      desc: 'YAML-defined parsers support formats such as Cisco ASA, Fortinet and CEF while allowing custom parser definitions.',
+    },
+    {
+      num: '02',
+      title: 'Normalization',
+      desc: 'Transform parsed fields into a consistent normalized event structure.',
+    },
+    {
+      num: '03',
+      title: 'Quarantine & Intelligence',
+      desc: 'Unknown log formats are quarantined and grouped into structural clusters for AI-assisted parser generation.',
+    },
+    {
+      num: '04',
+      title: 'Full Traceability',
+      desc: 'Trace events through ingestion, parsing, normalization, validation and export.',
+    },
+  ];
+
   return (
-    <section id="features" className="section">
-      <div className="container text-center">
-        <div className="section-tag">FEATURES OVERVIEW</div>
-        <h2 className="section-title">Built for real-world security ops</h2>
-        <p className="section-subtitle">Every component designed to handle the chaos of production<br />log pipelines at scale.</p>
-        
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <h3 className="feature-title">Universal Parsing</h3>
-            <p className="feature-desc">YAML-defined parsers auto-detect Cisco ASA, Fortinet, CEF, and any custom log format via confidence-scored signature matching.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <h3 className="feature-title">AI Parser Generation</h3>
-            <p className="feature-desc">Unknown log formats are quarantined and analyzed by Gemma AI (via Ollama) to auto-generate new parsers — with human-in-the-loop approval.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <h3 className="feature-title">Full Traceability</h3>
-            <p className="feature-desc">Every normalized field traces back to the exact raw substring, extraction regex, and parser version. SHA-256 integrity hashing proves zero information loss.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <h3 className="feature-title">Dashboard Agnostic</h3>
-            <p className="feature-desc">Exports OCSF-normalized events to Elasticsearch. Works with Kibana, Grafana, or any visualization tool out of the box.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <h3 className="feature-title">Real-Time Pipeline</h3>
-            <p className="feature-desc">7-stage processing pipeline: Ingest → Resolve → Parse → Normalize → Validate → Assemble → Export. Sub-second latency.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <h3 className="feature-title">Quarantine & Dead Letter</h3>
-            <p className="feature-desc">Unknown formats are quarantined for AI analysis. Malformed events go to dead-letter for forensic review. Zero events lost.</p>
-          </div>
+    <section id="features" className="section section-border-top">
+      <div className="container">
+        <div className="section-header text-center">
+          <div className="badge-tag">SYSTEM ARCHITECTURE</div>
+          <h2 className="section-title">One pipeline for every log.</h2>
+          <p className="section-subtitle">
+            Loki processes high-volume raw telemetry streams, resolving format variations and transforming un-structured logs into enterprise security intelligence.
+          </p>
+        </div>
+
+        <div className="grid-4">
+          {featureList.map((item) => (
+            <div key={item.num} className="card">
+              <span className="card-number">{item.num} —</span>
+              <h3 className="card-title">{item.title}</h3>
+              <p className="card-desc">{item.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

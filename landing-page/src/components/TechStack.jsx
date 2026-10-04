@@ -1,55 +1,59 @@
 import React from 'react';
-import { FaNodeJs, FaDocker } from 'react-icons/fa6';
-import { SiExpress, SiElasticsearch, SiKibana, SiOllama, SiGoogle } from 'react-icons/si';
-import { VscShield } from 'react-icons/vsc';
-
-const TECH_ITEMS = [
-  { name: 'Node.js', icon: <FaNodeJs className="w-14 h-14" /> },
-  { name: 'Express', icon: <SiExpress className="w-14 h-14" /> },
-  { name: 'Elasticsearch', icon: <SiElasticsearch className="w-14 h-14" /> },
-  { name: 'Kibana', icon: <SiKibana className="w-14 h-14" /> },
-  { name: 'Ollama', icon: <SiOllama className="w-14 h-14" /> },
-  { name: 'Gemma AI', icon: <SiGoogle className="w-14 h-14" /> },
-  { name: 'Docker', icon: <FaDocker className="w-14 h-14" /> },
-  { name: 'OCSF Schema', icon: <VscShield className="w-14 h-14" /> },
-];
+import { Server, Database, Monitor, Box, Cpu, FileText, Code2 } from 'lucide-react';
 
 export default function TechStack() {
+  const stack = [
+    { name: 'Node.js', role: 'Express Engine Runtime', icon: Server },
+    { name: 'Elasticsearch 8.15', role: 'Persistent Security Event Store', icon: Database },
+    { name: 'Kibana 8.15', role: 'Real-time Analytics Dashboards', icon: Monitor },
+    { name: 'Docker', role: 'Container Orchestration & Compose', icon: Box },
+    { name: 'Ollama', role: 'Local AI Model Host Runtime', icon: Cpu },
+    { name: 'Gemma', role: 'Open LLM for Regex & Parser Synthesis', icon: Code2 },
+    { name: 'YAML', role: 'Hot-Reloaded Parser Definition Specs', icon: FileText },
+  ];
+
   return (
-    <section id="powered-by" className="w-full py-24 overflow-hidden bg-transparent">
-      <div className="w-full max-w-7xl mx-auto text-center px-4">
-        
-        {/* Scaled up the text size and injected distinct top/bottom margins */}
-        <div 
-          className="text-sm tracking-[0.4em] font-black mt-16 mb-16 uppercase opacity-60" 
-          style={{ color: 'var(--text-dim, #64748b)' }}
-        >
-          POWERED BY
+    <section className="section section-border-top">
+      <div className="container">
+        <div className="section-header text-center">
+          <div className="badge-tag">ENGINEERING FOUNDATION</div>
+          <h2 className="section-title">Built with practical infrastructure.</h2>
+          <p className="section-subtitle">
+            Loki relies on production-grade open-source infrastructure designed for high throughput log ingestion, elastic searchability, and local privacy.
+          </p>
         </div>
 
-        {/* The Marquee Frame Wrapper */}
-        <div className="mask-gradient-custom group">
-          
-          {/* Track 1 */}
-          <div className="animate-marquee-custom group-hover:[animation-play-state:paused]">
-            {TECH_ITEMS.map((tech, idx) => (
-              <div key={`t1-${idx}`} className="marquee-item-custom text-slate-400 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-pointer">
-                {tech.icon}
-                <span className="text-3xl font-extrabold tracking-tight">{tech.name}</span>
+        <div className="tech-badges" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.85rem' }}>
+          {stack.map((item) => {
+            const IconComp = item.icon;
+            return (
+              <div
+                key={item.name}
+                className="card"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.85rem',
+                  padding: '0.85rem 1.25rem',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--border-subtle)',
+                }}
+              >
+                <div style={{ color: 'var(--text-main)' }}>
+                  <IconComp size={18} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#ffffff' }}>
+                    {item.name}
+                  </div>
+                  <div style={{ fontSize: '0.725rem', color: 'var(--text-dim)' }}>
+                    {item.role}
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-
-          {/* Track 2: Duplicate for seamless loop alignment */}
-          <div aria-hidden="true" className="animate-marquee-custom group-hover:[animation-play-state:paused]">
-            {TECH_ITEMS.map((tech, idx) => (
-              <div key={`t2-${idx}`} className="marquee-item-custom text-slate-400 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-pointer">
-                {tech.icon}
-                <span className="text-3xl font-extrabold tracking-tight">{tech.name}</span>
-              </div>
-            ))}
-          </div>
-
+            );
+          })}
         </div>
       </div>
     </section>
