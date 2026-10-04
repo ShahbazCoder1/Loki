@@ -86,6 +86,24 @@ code::-webkit-scrollbar {
   height: 0 !important;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+section[id],
+footer[id],
+header[id],
+div[id] {
+  scroll-margin-top: 80px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   background-color: var(--bg-dark);
   color: var(--text-main);
@@ -129,7 +147,7 @@ body {
 }
 
 .section-border-top {
-  border-top: 1px solid var(--border-subtle);
+  border-top: none;
 }
 
 .text-center {
@@ -1064,7 +1082,7 @@ body {
 /* Footer */
 .footer {
   padding: 3.5rem 0 2.5rem;
-  border-top: 1px solid var(--border-subtle);
+  border-top: none;
   background: var(--bg-surface);
 }
 
