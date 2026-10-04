@@ -334,10 +334,54 @@ body {
   padding: 0.4rem;
 }
 
-/* Hero Section — Split Layout */
+/* Hero Section — Fullscreen Split Layout */
 .hero-section {
-  padding: 5rem 0 5.5rem;
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 0 5rem;
   position: relative;
+  box-sizing: border-box;
+}
+
+.hero-scroll-down {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+  animation: heroBounce 2s infinite;
+  text-decoration: none;
+  z-index: 10;
+}
+
+.hero-scroll-down:hover {
+  color: #ffffff;
+  border-color: var(--border-medium);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes heroBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  40% {
+    transform: translateX(-50%) translateY(6px);
+  }
+  60% {
+    transform: translateX(-50%) translateY(3px);
+  }
 }
 
 .hero-grid {
