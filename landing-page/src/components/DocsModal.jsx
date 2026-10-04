@@ -13,7 +13,7 @@ export default function DocsModal({ isOpen, onClose }) {
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem' }}>
-          <BookOpen size={18} style={{ color: '#ffffff' }} />
+          <img src="/Loki.png" alt="Loki Logo" style={{ width: '28px', height: '28px', objectFit: 'contain', imageRendering: 'pixelated' }} />
           <div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff' }}>
               Loki Architecture & Developer Reference

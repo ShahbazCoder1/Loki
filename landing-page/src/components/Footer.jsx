@@ -15,7 +15,7 @@ export default function Footer() {
         <div className="footer-content">
           <div>
             <div className="footer-brand">
-              <Shield size={16} style={{ color: '#ffffff' }} />
+              <img src="/Loki.png" alt="Loki Logo" style={{ width: '24px', height: '24px', objectFit: 'contain', imageRendering: 'pixelated' }} />
               <span>LOKI</span>
             </div>
             <div className="footer-text" style={{ marginTop: '0.2rem' }}>
