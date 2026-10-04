@@ -22,19 +22,20 @@ export default function Navbar({ onOpenDocs }) {
         <ul className={`nav-menu ${mobileMenuOpen ? 'active' : ''}`}>
           <li><a href="#features" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Features</a></li>
           <li><a href="#pipeline" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Pipeline</a></li>
-          <li><a href="#intelligence" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Intelligence</a></li>
+          <li><a href="#formats" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Formats</a></li>
           <li><a href="#traceability" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Traceability</a></li>
-          <li><a href="#docs" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Docs</a></li>
+          <li><a href="#docs" className="nav-link" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); onOpenDocs(); }}>Docs</a></li>
         </ul>
 
         <div className="nav-cta">
-          <button 
-            onClick={onOpenDocs} 
+          <a 
+            href="#architecture" 
+            onClick={() => setMobileMenuOpen(false)}
             className="btn btn-outline-subtle" 
             style={{ padding: '0.4rem 0.85rem', fontSize: '0.825rem' }}
           >
             <span>Architecture</span>
-          </button>
+          </a>
           
           <a
             href="https://github.com/ShahbazCoder1/Loki"
