@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import PipelineArchitecture from './components/PipelineArchitecture';
+import Architecture from './components/Architecture';
 import UnknownLogIntelligence from './components/UnknownLogIntelligence';
 import HumanInTheLoop from './components/HumanInTheLoop';
 import EventTraceability from './components/EventTraceability';
@@ -25,6 +26,7 @@ function App() {
       <Hero />
       <Features />
       <PipelineArchitecture />
+      <Architecture />
       <UnknownLogIntelligence />
       <HumanInTheLoop />
       <EventTraceability />

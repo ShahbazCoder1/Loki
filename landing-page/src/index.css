@@ -30,9 +30,28 @@
 }
 
 /* Universal Scrollbar Elimination for ALL browsers & elements */
-*, *::before, *::after, html, body, div, pre, code, ul, li, nav, section, footer, main, form, input, button, textarea {
-  -ms-overflow-style: none !important;  /* IE and Edge */
-  scrollbar-width: none !important;  /* Firefox */
+*,
+*::before,
+*::after,
+html,
+body,
+div,
+pre,
+code,
+ul,
+li,
+nav,
+section,
+footer,
+main,
+form,
+input,
+button,
+textarea {
+  -ms-overflow-style: none !important;
+  /* IE and Edge */
+  scrollbar-width: none !important;
+  /* Firefox */
 }
 
 *::-webkit-scrollbar,
@@ -52,14 +71,16 @@ code::-webkit-scrollbar {
   visibility: hidden !important;
 }
 
-pre, code {
+pre,
+code {
   white-space: pre-wrap;
   word-break: break-word;
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
 
-pre::-webkit-scrollbar, code::-webkit-scrollbar {
+pre::-webkit-scrollbar,
+code::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -84,7 +105,7 @@ body {
   height: 100vh;
   pointer-events: none;
   z-index: 0;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px;
@@ -739,6 +760,41 @@ body {
   font-weight: 600;
 }
 
+/* System Architecture Diagram Section */
+.arch-diagram-wrapper {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.arch-diagram-card {
+  background: #090c10;
+  border: 1px solid #21262d;
+  border-radius: var(--radius-xl);
+  padding: 0.75rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.arch-diagram-img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: 680px;
+  display: block;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 768px) {
+  .arch-diagram-card {
+    padding: 0.75rem;
+    border-radius: var(--radius-lg);
+  }
+}
+
 /* Unknown Log Intelligence Flow */
 .flow-diag-card {
   background: var(--bg-surface);
@@ -934,15 +990,14 @@ body {
 }
 
 @layer utilities {
+
   /* Premium Transparent Fading Mask Edge-to-Edge */
   .mask-gradient {
-    mask-image: linear-gradient(
-      to right,
-      transparent,
-      rgba(0, 0, 0, 1) 15%,
-      rgba(0, 0, 0, 1) 85%,
-      transparent
-    );
+    mask-image: linear-gradient(to right,
+        transparent,
+        rgba(0, 0, 0, 1) 15%,
+        rgba(0, 0, 0, 1) 85%,
+        transparent);
   }
 
   /* Core infinite horizontal sliding keyframes config */
@@ -955,8 +1010,10 @@ body {
   0% {
     transform: translateX(0%);
   }
+
   100% {
-    transform: translateX(calc(-100% - 3rem)); /* -3rem maps to gap-12 */
+    transform: translateX(calc(-100% - 3rem));
+    /* -3rem maps to gap-12 */
   }
 }
 
@@ -1009,26 +1066,67 @@ body {
 
 /* Responsive Queries */
 @media (max-width: 1024px) {
-  .hero-grid { grid-template-columns: 1fr; gap: 2.5rem; }
-  .grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .flow-steps-grid { grid-template-columns: repeat(2, 1fr); }
-  .scorecard-body { grid-template-columns: 1fr; }
-  .node-detail-box { grid-template-columns: 1fr; }
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .flow-steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .scorecard-body {
+    grid-template-columns: 1fr;
+  }
+
+  .node-detail-box {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .section { padding: 4rem 0; }
-  .hero-title { font-size: 2.25rem; }
-  .hero-subtitle { font-size: 0.975rem; }
-  .section-title { font-size: 1.85rem; }
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .flow-steps-grid { grid-template-columns: 1fr; }
-  .nav-menu { display: none; }
-  .mobile-menu-toggle { display: block; }
+  .section {
+    padding: 4rem 0;
+  }
+
+  .hero-title {
+    font-size: 2.25rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.975rem;
+  }
+
+  .section-title {
+    font-size: 1.85rem;
+  }
+
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-steps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-menu {
+    display: none;
+  }
+
+  .mobile-menu-toggle {
+    display: block;
+  }
 }
 
 /* 1. Global Page Safeguard: Stop the browser from ever leaking horizontal scrollbars */
-html, body {
+html,
+body {
   max-width: 100% !important;
   overflow-x: hidden !important;
 }
@@ -1038,17 +1136,17 @@ html, body {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 1.25rem !important;               
-  
-  font-size: 0.75rem !important;         
-  font-weight: 700 !important;           
-  letter-spacing: 0.5em !important;      
+  gap: 1.25rem !important;
+
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5em !important;
   text-transform: uppercase !important;
   color: var(--text-dim, #475569) !important;
-  opacity: 0.4 !important;              
-  
-  margin-top: 6rem !important;           
-  margin-bottom: 1.5rem !important;      
+  opacity: 0.4 !important;
+
+  margin-top: 6rem !important;
+  margin-bottom: 1.5rem !important;
   width: 100% !important;
   text-align: center !important;
 }
@@ -1058,7 +1156,7 @@ html, body {
 .cncf-powered-header::after {
   content: "" !important;
   height: 1px !important;
-  width: 40px !important;                
+  width: 40px !important;
   background: currentColor !important;
   opacity: 0.2 !important;
 }
@@ -1067,40 +1165,38 @@ html, body {
 .mask-gradient-custom {
   display: flex !important;
   flex-direction: row !important;
-  overflow-x: hidden !important; /* Locks down the element frame */
-  width: 100% !important;        /* Respects the layout grid without breaking out */
+  overflow-x: hidden !important;
+  /* Locks down the element frame */
+  width: 100% !important;
+  /* Respects the layout grid without breaking out */
   position: relative !important;
-  padding: 2.5rem 0 !important;          
+  padding: 2.5rem 0 !important;
   user-select: none;
-  
+
   /* Absolute edge masking grid */
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    rgba(0, 0, 0, 1) 15%,
-    rgba(0, 0, 0, 1) 85%,
-    transparent
-  ) !important;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent,
-    rgba(0, 0, 0, 1) 15%,
-    rgba(0, 0, 0, 1) 85%,
-    transparent
-  ) !important;
+  mask-image: linear-gradient(to right,
+      transparent,
+      rgba(0, 0, 0, 1) 15%,
+      rgba(0, 0, 0, 1) 85%,
+      transparent) !important;
+  -webkit-mask-image: linear-gradient(to right,
+      transparent,
+      rgba(0, 0, 0, 1) 15%,
+      rgba(0, 0, 0, 1) 85%,
+      transparent) !important;
 }
 
 /* 4. Infinite Running Track */
 .animate-marquee-custom {
   display: flex !important;
-  flex-direction: row !important; 
+  flex-direction: row !important;
   align-items: center !important;
-  justify-content: flex-start !important; 
-  min-width: max-content !important;    
-  gap: 7rem !important;                  
-  padding-right: 7rem !important;       
-  
-  animation: marqueeLoop 35s linear infinite !important; 
+  justify-content: flex-start !important;
+  min-width: max-content !important;
+  gap: 7rem !important;
+  padding-right: 7rem !important;
+
+  animation: marqueeLoop 35s linear infinite !important;
 }
 
 /* 5. Perfectly Balanced Floating Tech Items */
@@ -1108,19 +1204,19 @@ html, body {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 1.5rem !important;                
+  gap: 1.5rem !important;
   white-space: nowrap !important;
 }
 
 .marquee-item-custom svg {
-  width: 54px !important;               
+  width: 54px !important;
   height: 54px !important;
-  flex-shrink: 0 !important;            
+  flex-shrink: 0 !important;
 }
 
 .marquee-item-custom span {
-  font-size: 1.75rem !important;         
-  font-weight: 700 !important;          
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
   letter-spacing: -0.02em !important;
 }
 
@@ -1129,7 +1225,8 @@ html, body {
   0% {
     transform: translateX(0%);
   }
+
   100% {
-    transform: translateX(-50%);         
+    transform: translateX(-50%);
   }
 }
