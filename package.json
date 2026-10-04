@@ -8,6 +8,7 @@
     "start": "node --env-file=.env server.js",
     "dev": "node --env-file=.env server.js",
     "test": "node --env-file=.env --test tests/*.test.js",
+    "setup": "./loki setup",
     "setup-indices": "node --env-file=.env scripts/setup-indices.js",
     "seed-data": "node --env-file=.env dashboards/seed-sample-events.js",
     "setup-dashboard": "node --env-file=.env dashboards/setup-kibana-dashboard.js"

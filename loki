@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+
+import { runSetup } from "./setup/index.js";
+
+const command = process.argv[2];
+
+if (command === "setup") {
+  await runSetup();
+} else {
+  console.log(`
+Loki
+
+Usage:
+  ./loki setup
+
+Commands:
+  setup    Check and install Loki prerequisites, then start the stack.
+`);
+}
