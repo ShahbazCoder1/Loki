@@ -30,10 +30,17 @@ jobs:
 
       - name: Create fallback .env
         run: |
-          echo "ELASTICSEARCH_URL=http://localhost:9200" > .env
+          echo "PORT=3000" > .env
+          echo "ULPF_API_URL=http://localhost:3000" >> .env
           echo "ULPF_LOG_API_URL=http://localhost:3000/api/logs" >> .env
           echo "ULPF_SERVER_URL=http://localhost:3000" >> .env
-          echo "ULPF_API_URL=http://localhost:3000" >> .env
+          echo "KIBANA_URL=http://127.0.0.1:5601" >> .env
+          echo "ELASTICSEARCH_URL=http://localhost:9200" >> .env
+          echo "ELASTICSEARCH_REQUEST_TIMEOUT_MS=3000" >> .env
+          echo "OLLAMA_URL=http://localhost:11434/api/generate" >> .env
+          echo "OLLAMA_MODEL=gemma4:e2b" >> .env
+          echo "OLLAMA_TIMEOUT_MS=300000" >> .env
+          echo "ULPF_BASE_URL=http://localhost:3000" >> .env
 
       - name: Run Test Suite
         run: npm test

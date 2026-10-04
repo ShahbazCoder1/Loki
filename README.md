@@ -157,7 +157,7 @@ You can verify the system health in your browser at `http://localhost:3000/api/h
 Open a **second terminal** and launch the live terminal dashboard:
 
 ```powershell
-node cli-dashboard/dashboard.js
+node --env-file=.env cli-dashboard/dashboard.js
 ```
 This renders the real-time hacker terminal dashboard with:
 - **Live Event Feed** (scrolling table of parsed OCSF events)
@@ -177,9 +177,11 @@ Open a **third terminal** and start streaming logs into the framework:
 ```powershell
 python log-simulator/simulator.py
 ```
+
 This streams mixed synthetic logs + real laptop logs (`wevtutil System` events) into the framework every second.
 
 You will immediately see:
+
 1. Logs being ingested and parsed in **Terminal 1 (Server)**
 2. Live metrics, gauges, and tables updating in **Terminal 2 (TUI Dashboard)**
 3. Live colored stream status in **Terminal 3 (Simulator)**
@@ -189,27 +191,100 @@ You will immediately see:
 ### Step 6: View the Kibana Dashboard in Your Browser
 
 Open your web browser and go to:
-```
+
+```text
 http://localhost:5601
 ```
 
-1. Navigate to **Analytics** ➔ **Dashboard**.
-2. Click on **Loki - Security Overview** (or any of the 3 sub-dashboards: *Security Overview*, *Quarantine & Intelligence*, or *Event Inspector*).
-3. Set the time range to **Today** or **Last 15 minutes** with **Auto-refresh: 5s**.
-4. You will see real-time charts, event maps, and the events table with clickable **Action** links!
+1. Navigate to **Analytics → Dashboard**.
+2. Open **Loki - Security Overview** or any of the Loki sub-dashboards.
+3. Set the time range to **Today** or **Last 15 minutes**.
+4. Enable **Auto-refresh: 5s**.
+
+You will see real-time charts, event maps, and the events table.
 
 ---
 
-### Summary of Terminal Layout for Demo Video
+### Step 7: Trace an Event from the Terminal (Terminal 4)
 
-| Window | What Runs Here |
-|---|---|
-| **Top Left** | **Terminal TUI Dashboard** (`node cli-dashboard/dashboard.js`) |
-| **Top Right** | **Kibana Web Dashboard** (`http://localhost:5601`) |
-| **Bottom Left** | **Node.js Framework Server** (`npm start`) |
-| **Bottom Right** | **Python Simulator** (`python log-simulator/simulator.py`) |
+Open a **fourth terminal** and list recent exported events:
 
-To stop the Docker containers when you are done:
+```powershell
+node --env-file=.env cli-dashboard/trace.js --list
+```
+
+Select an event from the numbered list.
+
+To directly trace a known event:
+
+```powershell
+node --env-file=.env cli-dashboard/trace.js <event_id>
+```
+
+The CLI displays:
+
+* Event ID
+* Complete provenance chain
+* Processing timestamps
+* Original raw log
+* SHA-256 integrity verification
+* Field-level lineage
+* Parser ID
+* Parser confidence
+* Source-resolution method
+
+---
+
+### Step 8: Review Parser Candidates (Terminal 5)
+
+Open a **fifth terminal** and launch the parser approval workflow:
+
+```powershell
+node --env-file=.env cli-dashboard/approve.js
+```
+
+This lists pending AI-generated parser candidates.
+
+Select a candidate to inspect:
+
+* Candidate ID
+* Device family
+* Detection signatures
+* Extraction rules
+* Required fields
+* Normalization mapping
+* Positive test results
+* Negative test results
+* Overall pass rate
+
+Then choose:
+
+```text
+[A]pprove / [R]eject / [B]ack?
+```
+
+---
+
+### Step 9: Directly Approve or Reject a Candidate
+
+To approve a known candidate without entering interactive mode:
+
+```powershell
+node --env-file=.env cli-dashboard/approve.js approve <candidate_id>
+```
+
+To reject a candidate:
+
+```powershell
+node --env-file=.env cli-dashboard/approve.js reject <candidate_id>
+```
+
+---
+
+### Step 10: Stop the Docker Containers
+
+When you are finished:
+
 ```powershell
 docker compose down
 ```
