@@ -25,7 +25,7 @@ export default function Features() {
   ];
 
   return (
-    <section id="features" className="section section-border-top">
+    <section id="features" className="section section-border-top reveal-section">
       <div className="container">
         <div className="section-header text-center">
           <h2 className="section-title">One pipeline for every log.</h2>

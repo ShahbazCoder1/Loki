@@ -10,7 +10,7 @@ const GithubIcon = ({ size = 16 }) => (
 
 export default function FinalCTA() {
   return (
-    <section className="section section-border-top">
+    <section className="section section-border-top reveal-section">
       <div className="container">
         <div className="section-header text-center" style={{ marginBottom: '1.5rem' }}>
           <h2 className="section-title" style={{ fontSize: '2.5rem' }}>

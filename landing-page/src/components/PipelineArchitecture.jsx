@@ -205,7 +205,7 @@ PUT /ulpf-events/_doc/0005e8c0-fcf5-48c7-8ea1-f524e6b86d5a
   const currentStageInfo = stages.find((s) => s.id === activeStage) || stages[2];
 
   return (
-    <section id="pipeline" className="section section-border-top">
+    <section id="pipeline" className="section section-border-top reveal-section">
       <div className="container">
         <div className="section-header text-center">
           <h2 className="section-title">From raw log to normalized event.</h2>

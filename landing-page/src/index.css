@@ -346,33 +346,33 @@ body {
   box-sizing: border-box;
 }
 
-.hero-scroll-down {
+.hero-scroll-down-desktop {
   position: absolute;
-  bottom: 1.5rem;
+  bottom: 2.25rem;
   left: 50%;
   transform: translateX(-50%);
   color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   border: 1px solid var(--border-subtle);
   background: rgba(255, 255, 255, 0.02);
   transition: all 0.2s ease;
-  animation: heroBounce 2s infinite;
+  animation: heroBounceDesktop 2s infinite;
   text-decoration: none;
   z-index: 10;
 }
 
-.hero-scroll-down:hover {
+.hero-scroll-down-desktop:hover {
   color: #ffffff;
   border-color: var(--border-medium);
   background: rgba(255, 255, 255, 0.08);
 }
 
-@keyframes heroBounce {
+@keyframes heroBounceDesktop {
   0%, 20%, 50%, 80%, 100% {
     transform: translateX(-50%) translateY(0);
   }
@@ -1275,6 +1275,11 @@ body {
   }
 }
 
+/* Mobile-only action helper */
+.mobile-only-action {
+  display: none;
+}
+
 /* Event Traceability Responsive Layout */
 .traceability-grid {
   display: grid;
@@ -1289,8 +1294,204 @@ body {
   gap: 0.75rem;
 }
 
-@media (max-width: 868px) {
+@media (max-width: 768px) {
+  html, body, .app-wrapper {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .container {
+    padding: 0 1.25rem !important;
+  }
+
+  /* Navbar Responsive */
+  .nav-container {
+    padding: 0 1rem !important;
+  }
+
+  .desktop-only-cta {
+    display: none !important;
+  }
+
+  .mobile-only-action {
+    display: flex !important;
+    width: 100%;
+  }
+
+  .mobile-menu-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-menu {
+    display: none;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: rgba(10, 12, 16, 0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 1.25rem 1.5rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.15rem;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.9);
+    z-index: 999;
+  }
+
+  .nav-menu.active {
+    display: flex !important;
+  }
+
+  .nav-link {
+    font-size: 1rem;
+    padding: 0.25rem 0;
+  }
+
+  /* Hero Section Responsive */
+  .hero-section {
+    min-height: auto !important;
+    padding: 2.5rem 0 3.5rem !important;
+    justify-content: flex-start !important;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+    width: 100% !important;
+  }
+
+  .hero-title {
+    font-size: 1.85rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 1rem !important;
+    word-break: break-word;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+    width: 100% !important;
+  }
+
+  .hero-scroll-down-desktop {
+    display: none !important;
+  }
+
+  .hero-scroll-down-left {
+    margin-top: 1.5rem !important;
+  }
+
+  /* Terminal Window Responsive */
+  .terminal-window {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .terminal-header {
+    padding: 0.6rem 0.85rem !important;
+  }
+
+  .terminal-body {
+    padding: 1rem 0.85rem !important;
+  }
+
+  .terminal-cmd {
+    font-size: 0.775rem !important;
+    word-break: break-all !important;
+    white-space: pre-wrap !important;
+  }
+
+  /* Section Spacing Responsive */
+  .section {
+    padding: 2.75rem 0 !important;
+  }
+
+  .section-title {
+    font-size: 1.65rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .section-subtitle {
+    font-size: 0.925rem !important;
+  }
+
+  .grid-4, .grid-3, .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+
   .traceability-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+  }
+
+  .arch-diagram-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .arch-diagram-img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}
+
+/* ==========================================
+   SCROLL REVEAL ANIMATIONS
+   ========================================== */
+.reveal-section {
+  opacity: 0;
+  transform: translateY(60px) scale(0.97);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-section.is-revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Staggered Card Reveals within Sections */
+.reveal-section .grid-4 > .card,
+.reveal-section .tech-badges > div {
+  opacity: 0;
+  transform: translateY(30px) scale(0.97);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-section.is-revealed .grid-4 > .card,
+.reveal-section.is-revealed .tech-badges > div {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.reveal-section.is-revealed .grid-4 > .card:nth-child(1) { transition-delay: 0.12s; }
+.reveal-section.is-revealed .grid-4 > .card:nth-child(2) { transition-delay: 0.22s; }
+.reveal-section.is-revealed .grid-4 > .card:nth-child(3) { transition-delay: 0.32s; }
+.reveal-section.is-revealed .grid-4 > .card:nth-child(4) { transition-delay: 0.42s; }
+
+.reveal-section.is-revealed .tech-badges > div:nth-child(1) { transition-delay: 0.10s; }
+.reveal-section.is-revealed .tech-badges > div:nth-child(2) { transition-delay: 0.18s; }
+.reveal-section.is-revealed .tech-badges > div:nth-child(3) { transition-delay: 0.26s; }
+.reveal-section.is-revealed .tech-badges > div:nth-child(4) { transition-delay: 0.34s; }
+.reveal-section.is-revealed .tech-badges > div:nth-child(5) { transition-delay: 0.42s; }
+.reveal-section.is-revealed .tech-badges > div:nth-child(6) { transition-delay: 0.50s; }
+.reveal-section.is-revealed .tech-badges > div:nth-child(7) { transition-delay: 0.58s; }
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-section,
+  .reveal-section .grid-4 > .card,
+  .reveal-section .tech-badges > div {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }

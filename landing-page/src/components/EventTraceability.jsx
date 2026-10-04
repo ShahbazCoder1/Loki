@@ -78,7 +78,7 @@ PUT /ulpf-events/_doc/evt-7721-bf90
   };
 
   return (
-    <section id="traceability" className="section section-border-top">
+    <section id="traceability" className="section section-border-top reveal-section">
       <div className="container">
         <div className="section-header text-center">
           <h2 className="section-title">Every event has a trail.</h2>

@@ -63,7 +63,7 @@ fields:
   const currentFmt = formats.find((f) => f.id === activeFormat) || formats[0];
 
   return (
-    <section id="formats" className="section section-border-top">
+    <section id="formats" className="section section-border-top reveal-section">
       <div className="container">
         <div className="section-header text-center">
           <h2 className="section-title">Start with known formats. Extend when needed.</h2>

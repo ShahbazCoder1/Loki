@@ -6,7 +6,7 @@ export default function Hero() {
   const singleCommand = "cd Loki && docker compose up -d";
 
   return (
-    <section id="hero" className="hero-section">
+    <section id="hero" className="hero-section reveal-section">
       <div className="container" style={{ width: '100%' }}>
         <div className="hero-grid">
           {/* LEFT SIDE: Content (Eyebrow, Title, Subtitle only - buttons removed) */}
@@ -44,10 +44,10 @@ export default function Hero() {
                 <CopyButton textToCopy={singleCommand} />
               </div>
 
-              <div className="terminal-body" style={{ minHeight: 'auto', padding: '1.5rem' }}>
-                <div className="terminal-line" style={{ marginBottom: 0 }}>
-                  <span className="terminal-prompt">$</span>
-                  <span className="terminal-cmd">curl -fsSL https://bun.sh/install | bash</span>
+              <div className="terminal-body" style={{ minHeight: 'auto', padding: '1.25rem' }}>
+                <div className="terminal-line" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: 0 }}>
+                  <span className="terminal-prompt" style={{ flexShrink: 0 }}>$</span>
+                  <span className="terminal-cmd" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>curl -fsSL https://bun.sh/install | bash</span>
                 </div>
               </div>
             </div>
@@ -55,10 +55,10 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Down Arrow Scroll Indicator */}
+      {/* Down Arrow Scroll Indicator (Desktop/Laptop View Only) */}
       <a
         href="#features"
-        className="hero-scroll-down"
+        className="hero-scroll-down-desktop"
         aria-label="Scroll down to features"
       >
         <ChevronDown size={20} />
