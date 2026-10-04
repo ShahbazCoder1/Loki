@@ -703,6 +703,42 @@ body {
   line-height: 1.6;
 }
 
+/* Syntax Highlighting Tokens */
+.token-comment {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.token-key {
+  color: #7dd3fc;
+}
+
+.token-string {
+  color: #86efac;
+  word-break: break-all;
+}
+
+.token-number {
+  color: #fde047;
+}
+
+.token-boolean {
+  color: #c084fc;
+}
+
+.token-null {
+  color: #94a3b8;
+}
+
+.token-punct {
+  color: #94a3b8;
+}
+
+.token-keyword {
+  color: var(--accent-green);
+  font-weight: 600;
+}
+
 /* Unknown Log Intelligence Flow */
 .flow-diag-card {
   background: var(--bg-surface);
