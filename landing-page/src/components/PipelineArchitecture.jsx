@@ -237,7 +237,7 @@ PUT /ulpf-events/_doc/0005e8c0-fcf5-48c7-8ea1-f524e6b86d5a
           </div>
 
           {/* Branch Outlets */}
-          <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginTop: '1.5rem', fontSize: '0.75rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+          <div className="pipeline-outlets-row">
             <div>● RESOLVE ➔ Quarantine Index (Unknown formats)</div>
             <div>● VALIDATE ➔ Dead Letter Index (Schema errors)</div>
             <div>● EXPORT ➔ Elasticsearch & SSE Stream</div>

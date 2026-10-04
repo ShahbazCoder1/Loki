@@ -30,24 +30,24 @@ export default function Hero() {
           <div className="hero-right">
             <div className="terminal-window">
               <div className="terminal-header">
-                <div className="terminal-dots" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  <span className="terminal-dot red" style={{ width: '11px', height: '11px', borderRadius: '50%', backgroundColor: '#ff5f56', display: 'inline-block' }}></span>
-                  <span className="terminal-dot yellow" style={{ width: '11px', height: '11px', borderRadius: '50%', backgroundColor: '#ffbd2e', display: 'inline-block' }}></span>
-                  <span className="terminal-dot green" style={{ width: '11px', height: '11px', borderRadius: '50%', backgroundColor: '#27c93f', display: 'inline-block' }}></span>
+                <div className="terminal-dots">
+                  <span className="terminal-dot red"></span>
+                  <span className="terminal-dot yellow"></span>
+                  <span className="terminal-dot green"></span>
                 </div>
 
                 <div className="terminal-title">
-                  <TerminalIcon size={13} style={{ color: 'var(--text-muted)' }} />
+                  <TerminalIcon size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                   <span>Get Loki running</span>
                 </div>
 
                 <CopyButton textToCopy={singleCommand} />
               </div>
 
-              <div className="terminal-body" style={{ minHeight: 'auto', padding: '1.25rem' }}>
-                <div className="terminal-line" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: 0 }}>
-                  <span className="terminal-prompt" style={{ flexShrink: 0 }}>$</span>
-                  <span className="terminal-cmd" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>curl -fsSL https://bun.sh/install | bash</span>
+              <div className="terminal-body">
+                <div className="terminal-line">
+                  <span className="terminal-prompt">$</span>
+                  <span className="terminal-cmd">curl -fsSL https://bun.sh/install | bash</span>
                 </div>
               </div>
             </div>
