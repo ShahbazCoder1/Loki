@@ -54,7 +54,6 @@ export default function KibanaObservability() {
     <section id="observability" className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">ENTERPRISE OBSERVABILITY</div>
           <h2 className="section-title">See what your pipeline is doing.</h2>
           <p className="section-subtitle">
             Loki automatically configures out-of-the-box Kibana dashboards (<code style={{ color: 'var(--text-main)' }}>http://localhost:5601</code>) and provides a terminal hacker UI for live operational awareness.

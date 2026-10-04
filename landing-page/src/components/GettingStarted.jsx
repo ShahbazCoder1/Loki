@@ -34,7 +34,6 @@ export default function GettingStarted({ onOpenDocs }) {
     <section id="docs" className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">LOCAL DEPLOYMENT GUIDE</div>
           <h2 className="section-title">Get Loki running locally.</h2>
           <p className="section-subtitle">
             Run Loki locally using Docker Desktop, Node.js 20+, and Python 3. Full infrastructure setup takes only a few shell commands.

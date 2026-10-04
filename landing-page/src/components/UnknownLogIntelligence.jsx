@@ -57,7 +57,6 @@ export default function UnknownLogIntelligence() {
     <section id="intelligence" className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">LOCAL AI INTELLIGENCE • OLLAMA + GEMMA</div>
           <h2 className="section-title">When Loki doesn't recognize a log.</h2>
           <p className="section-subtitle">
             Unknown formats don't disappear. Loki quarantines them, groups structurally similar events, and uses local AI-assisted parser generation for human review.

@@ -208,7 +208,6 @@ PUT /ulpf-events/_doc/0005e8c0-fcf5-48c7-8ea1-f524e6b86d5a
     <section id="pipeline" className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">END-TO-END DATAFLOW</div>
           <h2 className="section-title">From raw log to normalized event.</h2>
           <p className="section-subtitle">
             An enterprise pre-processing pipeline designed for deterministic log handling, automated normalization, and zero silent data drop.

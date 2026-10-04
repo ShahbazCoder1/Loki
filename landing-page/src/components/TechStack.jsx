@@ -16,7 +16,6 @@ export default function TechStack() {
     <section className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">ENGINEERING FOUNDATION</div>
           <h2 className="section-title">Built with practical infrastructure.</h2>
           <p className="section-subtitle">
             Loki relies on production-grade open-source infrastructure designed for high throughput log ingestion, elastic searchability, and local privacy.

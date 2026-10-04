@@ -66,7 +66,6 @@ fields:
     <section className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">MULTI-VENDOR EXTENSIBILITY</div>
           <h2 className="section-title">Start with known formats. Extend when needed.</h2>
           <p className="section-subtitle">
             Loki ships with out-of-the-box parsers for standard network security vendors and allows instant YAML parser additions without restarting services.

@@ -20,7 +20,6 @@ fields:
     <section className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">GOVERNANCE & AUDITABILITY</div>
           <h2 className="section-title">AI proposes. Humans decide.</h2>
           <p className="section-subtitle">
             AI generates candidate parsers, automated tests validate regex execution, and security analysts retain final approval to activate rules into production.

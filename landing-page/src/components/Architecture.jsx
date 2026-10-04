@@ -5,7 +5,6 @@ export default function Architecture() {
     <section id="architecture" className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">SYSTEM OVERVIEW</div>
           <h2 className="section-title">System Architecture</h2>
           <p className="section-subtitle">
             How Loki processes, analyzes, and exports security logs.

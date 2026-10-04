@@ -12,12 +12,7 @@ export default function FinalCTA() {
   return (
     <section className="section section-border-top">
       <div className="container">
-        <div className="section-header text-center" style={{ marginBottom: '2rem' }}>
-          <div className="badge-tag">
-            <span className="pulse-dot"></span>
-            OPEN SOURCE SECURITY INFRASTRUCTURE
-          </div>
-
+        <div className="section-header text-center" style={{ marginBottom: '1.5rem' }}>
           <h2 className="section-title" style={{ fontSize: '2.5rem' }}>
             Bring structure to your security logs.
           </h2>
