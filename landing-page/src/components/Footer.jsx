@@ -31,7 +31,7 @@ export default function Footer() {
             <li><a href="#docs" className="footer-link">Docs</a></li>
             <li>
               <a
-                href="https://github.com/Shreyasi53/SIH-26156"
+                href="https://github.com/ShahbazCoder1/Loki"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer-link"

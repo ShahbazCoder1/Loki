@@ -378,12 +378,54 @@ body {
   gap: 0.4rem;
 }
 
+.terminal-tabs {
+  display: flex;
+  background: #0c0c0c;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 0.5rem;
+  gap: 0.25rem;
+  overflow-x: auto;
+}
+
+.terminal-tab {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  color: var(--text-dim) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.775rem !important;
+  padding: 0.6rem 1rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+  outline: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.terminal-tab:hover {
+  color: var(--text-muted) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.terminal-tab.active {
+  color: var(--accent-green) !important;
+  border-bottom-color: var(--accent-green) !important;
+  background: rgba(34, 197, 94, 0.04) !important;
+  font-weight: 500 !important;
+}
+
 .terminal-body {
   padding: 1.5rem;
   font-family: var(--font-mono);
   font-size: 0.85rem;
   line-height: 1.65;
   background-color: var(--bg-terminal);
+  min-height: 220px;
 }
 
 .terminal-line {
@@ -393,8 +435,8 @@ body {
 }
 
 .terminal-prompt {
-  color: var(--text-dim);
-  font-weight: 500;
+  color: var(--accent-green);
+  font-weight: 600;
   margin-right: 0.65rem;
   user-select: none;
 }
@@ -407,10 +449,22 @@ body {
 }
 
 .terminal-cmd {
-  color: var(--text-main);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.terminal-url {
+  color: #38bdf8;
 }
 
 .terminal-output {
+  color: var(--accent-green);
+  margin-left: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.terminal-output-muted {
   color: var(--text-muted);
   margin-left: 1.25rem;
   margin-bottom: 0.5rem;
@@ -426,7 +480,7 @@ body {
   justify-content: space-between;
   font-family: var(--font-mono);
   font-size: 0.725rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 /* Copy Button Styling */

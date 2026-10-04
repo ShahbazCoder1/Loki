@@ -5,7 +5,9 @@ import CopyButton from './CopyButton';
 export default function Hero() {
   const [activeTab, setActiveTab] = useState('setup');
 
-  const setupCode = `docker compose up -d
+  const setupCode = `git clone https://github.com/ShahbazCoder1/Loki.git
+cd Loki
+docker compose up -d
 npm install
 npm run setup-indices
 npm run setup-dashboard
@@ -67,21 +69,24 @@ npm start`;
                 <CopyButton textToCopy={currentCode} />
               </div>
 
-              {/* Tab Selector */}
-              <div className="terminal-tabs" style={{ background: '#080808', borderBottom: '1px solid var(--border-subtle)', display: 'flex' }}>
+              {/* Terminal Tabs */}
+              <div className="terminal-tabs">
                 <button
+                  type="button"
                   className={`terminal-tab ${activeTab === 'setup' ? 'active' : ''}`}
                   onClick={() => setActiveTab('setup')}
                 >
-                  Local Stack
+                  Local Stack Setup
                 </button>
                 <button
+                  type="button"
                   className={`terminal-tab ${activeTab === 'tui' ? 'active' : ''}`}
                   onClick={() => setActiveTab('tui')}
                 >
                   TUI Dashboard
                 </button>
                 <button
+                  type="button"
                   className={`terminal-tab ${activeTab === 'sim' ? 'active' : ''}`}
                   onClick={() => setActiveTab('sim')}
                 >
@@ -92,61 +97,65 @@ npm start`;
               <div className="terminal-body">
                 {activeTab === 'setup' && (
                   <>
-                    <span className="terminal-comment"># Start Elasticsearch & Kibana containers</span>
+                    <span className="terminal-comment"># Clone repository & launch infrastructure</span>
                     <div className="terminal-line">
                       <span className="terminal-prompt">$</span>
-                      <span className="terminal-cmd">docker compose up -d</span>
+                      <span className="terminal-cmd">git clone https://github.com/ShahbazCoder1/Loki.git</span>
+                    </div>
+                    <div className="terminal-line">
+                      <span className="terminal-prompt">$</span>
+                      <span className="terminal-cmd">cd Loki && docker compose up -d</span>
                     </div>
 
-                    <span className="terminal-comment" style={{ marginTop: '0.6rem' }}># Install dependencies & initialize indices</span>
+                    <span className="terminal-comment" style={{ marginTop: '0.6rem' }}># Initialize indices & Kibana dashboards</span>
                     <div className="terminal-line">
                       <span className="terminal-prompt">$</span>
-                      <span className="terminal-cmd">npm install</span>
+                      <span className="terminal-cmd">npm install && npm run setup-indices</span>
                     </div>
-                    <div className="terminal-line">
-                      <span className="terminal-prompt">$</span>
-                      <span className="terminal-cmd">npm run setup-indices</span>
-                    </div>
-
-                    <span className="terminal-comment" style={{ marginTop: '0.6rem' }}># Auto-configure Kibana dashboards</span>
                     <div className="terminal-line">
                       <span className="terminal-prompt">$</span>
                       <span className="terminal-cmd">npm run setup-dashboard</span>
                     </div>
 
-                    <span className="terminal-comment" style={{ marginTop: '0.6rem' }}># Start Loki processing engine</span>
+                    <span className="terminal-comment" style={{ marginTop: '0.6rem' }}># Start Loki framework server</span>
                     <div className="terminal-line">
                       <span className="terminal-prompt">$</span>
                       <span className="terminal-cmd">npm start</span>
                     </div>
-                    <div className="terminal-output" style={{ color: 'var(--accent-green)', marginTop: '0.2rem' }}>
-                      Loki running on http://localhost:3000
+                    <div className="terminal-output">
+                      Loki running on <span className="terminal-url">http://localhost:3000</span>
                     </div>
                   </>
                 )}
 
                 {activeTab === 'tui' && (
                   <>
-                    <span className="terminal-comment"># Open terminal hacker dashboard (Terminal 2)</span>
+                    <span className="terminal-comment"># Open real-time terminal hacker UI (Terminal 2)</span>
                     <div className="terminal-line">
                       <span className="terminal-prompt">$</span>
                       <span className="terminal-cmd">node cli-dashboard/dashboard.js</span>
                     </div>
-                    <div className="terminal-output" style={{ color: 'var(--accent-green)', marginTop: '0.5rem' }}>
+                    <div className="terminal-output">
                       ● Live Event Stream • Throughput Gauge • Source Distribution
+                    </div>
+                    <div className="terminal-output-muted">
+                      Press 'q' or 'Esc' to exit terminal UI
                     </div>
                   </>
                 )}
 
                 {activeTab === 'sim' && (
                   <>
-                    <span className="terminal-comment"># Stream synthetic + Windows System logs (Terminal 3)</span>
+                    <span className="terminal-comment"># Stream synthetic + Windows logs (Terminal 3)</span>
                     <div className="terminal-line">
                       <span className="terminal-prompt">$</span>
                       <span className="terminal-cmd">python log-simulator/simulator.py</span>
                     </div>
-                    <div className="terminal-output" style={{ color: 'var(--accent-green)', marginTop: '0.5rem' }}>
-                      ● Ingesting Cisco ASA, Fortinet & CEF events via POST /api/logs
+                    <div className="terminal-output">
+                      ● Streaming Cisco ASA, Fortinet & CEF to POST /api/logs
+                    </div>
+                    <div className="terminal-output-muted">
+                      [200 OK] Batch ingested continuously
                     </div>
                   </>
                 )}

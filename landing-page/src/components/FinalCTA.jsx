@@ -34,7 +34,7 @@ export default function FinalCTA() {
           </a>
           
           <a
-            href="https://github.com/Shreyasi53/SIH-26156"
+            href="https://github.com/ShahbazCoder1/Loki"
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-secondary"

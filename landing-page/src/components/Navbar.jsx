@@ -37,7 +37,7 @@ export default function Navbar({ onOpenDocs }) {
           </button>
           
           <a
-            href="https://github.com/Shreyasi53/SIH-26156"
+            href="https://github.com/ShahbazCoder1/Loki"
             target="_blank"
             rel="noopener noreferrer"
             className="nav-github-btn"
