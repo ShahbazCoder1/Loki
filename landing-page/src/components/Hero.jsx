@@ -3,7 +3,7 @@ import { Terminal as TerminalIcon, ChevronDown } from 'lucide-react';
 import CopyButton from './CopyButton';
 
 export default function Hero() {
-  const singleCommand = "cd Loki && docker compose up -d";
+  const singleCommand = "curl -fsSL https://bun.sh/install | bash";
 
   return (
     <section id="hero" className="hero-section reveal-section">
@@ -47,7 +47,7 @@ export default function Hero() {
               <div className="terminal-body">
                 <div className="terminal-line">
                   <span className="terminal-prompt">$</span>
-                  <span className="terminal-cmd">curl -fsSL https://bun.sh/install | bash</span>
+                  <span className="terminal-cmd">{singleCommand}</span>
                 </div>
               </div>
             </div>
