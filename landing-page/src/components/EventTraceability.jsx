@@ -81,7 +81,6 @@ PUT /ulpf-events/_doc/evt-7721-bf90
     <section id="traceability" className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">FULL FIELD PROVENANCE</div>
           <h2 className="section-title">Every event has a trail.</h2>
           <p className="section-subtitle">
             Loki provides end-to-end event traceability through the processing pipeline so security analysts can inspect exact field lineage, raw inputs, and parser rules for compliance and forensics.
@@ -93,7 +92,7 @@ PUT /ulpf-events/_doc/evt-7721-bf90
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', color: 'var(--text-dim)', marginBottom: '0.85rem', textTransform: 'uppercase' }}>
             EVENT PROCESSING MILESTONES
           </div>
-          <div className="pipeline-nodes-container" style={{ padding: 0 }}>
+          <div className="pipeline-milestones-row">
             {trailSteps.map((step, index) => (
               <React.Fragment key={step.id}>
                 <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '0.5rem 0.85rem', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-mono)', fontSize: '0.775rem', color: '#ffffff', fontWeight: 600 }}>
@@ -106,7 +105,7 @@ PUT /ulpf-events/_doc/evt-7721-bf90
         </div>
 
         {/* Field Transformation Lineage Selector */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.25rem' }}>
+        <div className="traceability-grid">
           {/* Step Selection Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             {Object.keys(views).map((key) => (
@@ -144,7 +143,7 @@ PUT /ulpf-events/_doc/evt-7721-bf90
               </span>
             </div>
 
-            <div className="terminal-body" style={{ minHeight: '260px' }}>
+            <div className="terminal-body">
               <pre>{views[selectedTab].code}</pre>
             </div>
           </div>

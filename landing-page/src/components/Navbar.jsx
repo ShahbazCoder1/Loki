@@ -15,7 +15,7 @@ export default function Navbar({ onOpenDocs }) {
     <nav className="navbar">
       <div className="nav-container">
         <a href="#" className="nav-brand">
-          <Shield size={18} style={{ color: '#ffffff' }} />
+          <img src="/Loki.png" alt="Loki Logo" style={{ width: '28px', height: '28px', objectFit: 'contain', imageRendering: 'pixelated' }} />
           <span className="brand-name">LOKI</span>
         </a>
 

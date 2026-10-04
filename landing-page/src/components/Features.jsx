@@ -28,7 +28,6 @@ export default function Features() {
     <section id="features" className="section section-border-top">
       <div className="container">
         <div className="section-header text-center">
-          <div className="badge-tag">SYSTEM ARCHITECTURE</div>
           <h2 className="section-title">One pipeline for every log.</h2>
           <p className="section-subtitle">
             Loki processes high-volume raw telemetry streams, resolving format variations and transforming un-structured logs into enterprise security intelligence.
