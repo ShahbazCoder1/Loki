@@ -19,7 +19,7 @@ export default function Footer() {
               <span>LOKI</span>
             </div>
             <div className="footer-text" style={{ marginTop: '0.2rem' }}>
-              Universal Log Pre-processing Framework • Open Source (ISC License)
+              Universal Log Pre-processing Framework 
             </div>
           </div>
 

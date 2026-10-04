@@ -23,7 +23,7 @@ export default function FinalCTA() {
         </div>
 
         <div className="btn-group" style={{ justifyContent: 'center' }}>
-          <a href="#docs" className="btn btn-primary">
+          <a href="#hero" className="btn btn-primary">
             <span>Get Started</span>
             <ArrowRight size={15} />
           </a>
