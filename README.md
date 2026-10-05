@@ -4,6 +4,8 @@
   <img src="public/Loki.png" alt="Loki logo" width="220" />
 </div>
 
+[![Website](https://img.shields.io/badge/Website-Loki-blue?logo=googlechrome&logoColor=white)](https://loki.devloper.xyz/)
+[![Install](https://img.shields.io/badge/Install-Bash-4EAA25?logo=gnu-bash&logoColor=white)](https://loki.devloper.xyz/install.sh)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Framework-Express-000000?logo=express&logoColor=white)](https://expressjs.com/)
@@ -11,7 +13,62 @@
 
 Loki is a Unified Log Processing Framework for ingesting, parsing, normalizing, validating, enriching, and monitoring security and infrastructure logs.
 
+Visit our website at: [https://loki.devloper.xyz/](https://loki.devloper.xyz/)
+
 It provides a Node.js/Express API, YAML-based parser definitions, Elasticsearch persistence, Kibana dashboards, a terminal dashboard, a Python log simulator, quarantine handling, and dead-letter processing for operational telemetry.
+
+## Quick Install
+
+To install Loki via our automated script, run:
+
+```bash
+curl -fsSL https://loki.devloper.xyz/install.sh | bash
+```
+
+## Configuration
+
+Loki requires the following environment variables. Create a `.env` file in the root directory and add the following configuration:
+
+```env
+PORT=3000
+ULPF_API_URL=http://localhost:3000
+ULPF_LOG_API_URL=http://localhost:3000/api/logs
+ULPF_SERVER_URL=http://localhost:3000
+KIBANA_URL=http://127.0.0.1:5601
+ELASTICSEARCH_URL=http://localhost:9200
+ELASTICSEARCH_REQUEST_TIMEOUT_MS=3000
+OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=gemma4:e2b
+OLLAMA_TIMEOUT_MS=300000
+ULPF_BASE_URL=http://localhost:3000
+```
+
+## Demo Video
+
+[//]: # (Add demo video link or embed here)
+<br>
+<br>
+
+## Problem Statement
+
+**Problem Statement ID:** 26156  
+**Problem Statement Title:** Universal Log Pre-processing Framework  
+
+This solution covers a universal event schema and processing framework that enables:
+
+a) Preserve complete raw event data without information loss.  
+b) Extract and parse source-specific attributes.  
+c) Normalize fields into a common event taxonomy.  
+d) Maintain traceability between normalized and original events.  
+e) Plug-and-play on boarding of new log sources.  
+f) Unified visibility across enterprise environments.  
+g) Efficient SIEM and Data Lake integration.  
+h) AI/ML-ready security and operational analytics.  
+i) Reduced parser development effort.  
+j) The solution shall be deployable in an air-gapped network.  
+k) Solution may be packaged in a container for making it platform independent.  
+
+Our proposed main solution is detailed in: [ULPF Project Blueprint](docs/loki_ulpf_project_blueprint.md).
 
 ---
 
