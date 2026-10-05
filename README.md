@@ -51,9 +51,7 @@ Loki addresses Problem Statement 26156 by providing an end-to-end Universal Log 
 
 ## Live Demo
 
-Watch the Loki Universal Log Pre-processing Framework demonstration in action:
-
-Video Demonstration: [https://github.com/user-attachments/assets/8c3d10f5-0012-4394-8a35-025e31e3b6d5](https://github.com/user-attachments/assets/8c3d10f5-0012-4394-8a35-025e31e3b6d5)
+https://github.com/user-attachments/assets/13961dcf-9466-4676-b1df-e9fd84ba2937
 
 ---
 
