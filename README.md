@@ -45,30 +45,7 @@ ULPF_BASE_URL=http://localhost:3000
 
 ## Demo Video
 
-[//]: # (Add demo video link or embed here)
-<br>
-<br>
-
-## Problem Statement
-
-**Problem Statement ID:** 26156  
-**Problem Statement Title:** Universal Log Pre-processing Framework  
-
-This solution covers a universal event schema and processing framework that enables:
-
-a) Preserve complete raw event data without information loss.  
-b) Extract and parse source-specific attributes.  
-c) Normalize fields into a common event taxonomy.  
-d) Maintain traceability between normalized and original events.  
-e) Plug-and-play on boarding of new log sources.  
-f) Unified visibility across enterprise environments.  
-g) Efficient SIEM and Data Lake integration.  
-h) AI/ML-ready security and operational analytics.  
-i) Reduced parser development effort.  
-j) The solution shall be deployable in an air-gapped network.  
-k) Solution may be packaged in a container for making it platform independent.  
-
-Our proposed main solution is detailed in: [ULPF Project Blueprint](docs/loki_ulpf_project_blueprint.md).
+https://github.com/user-attachments/assets/8c3d10f5-0012-4394-8a35-025e31e3b6d5
 
 ---
 
